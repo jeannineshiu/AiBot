@@ -103,9 +103,9 @@ APP = web.Application(middlewares=[aiohttp_error_middleware])
 APP.router.add_post("/api/messages", messages)
 APP.router.add_get("/api/directlinetoken", get_direct_line_token) # 新增獲取 token 的路由
 
-# Serve static files from the "frontend" folder
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
-APP.router.add_static("/", frontend_path, show_index=True)
+# Serve static files from the root folder
+static_path = os.path.dirname(__file__)
+APP.router.add_static("/", static_path, show_index=True)
 
 # Enable CORS
 cors = setup_cors(APP, defaults={
