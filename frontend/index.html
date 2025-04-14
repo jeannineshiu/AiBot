@@ -1,47 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Interface</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.botframework.com/botframework-webchat/latest/botchat.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        #chatContainer {
-            width: 400px;
-            height: 600px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新版 Web Chat</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    #chatContainer {
+      width: 400px;
+      height: 600px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+  </style>
 </head>
 <body>
-    <div id="chatContainer"></div>
+  <div id="chatContainer"></div>
 
-    <script>
-        const botConnection = new BotChat.ChatConnector({
-            appId: 'YOUR_APP_ID',
-            appPassword: 'YOUR_APP_PASSWORD'
-        });
+  <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
 
-        BotChat.App({
-            botConnection: botConnection,
-            user: { id: 'USER_ID' },
-            bot: { id: 'BOT_ID' },
-            resize: 'detect'
+  <script>
+    const userID = 'user-' + Math.random().toString(36).substring(2, 15);
+    const username = 'guest';
+
+    async function getDirectLineToken() {
+      try {
+        const response = await fetch('/api/directlinetoken'); // 假設你的後端有這個 API 端點
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.token;
+      } catch (error) {
+        console.error('Failed to get Direct Line token:', error);
+        return null;
+      }
+    }
+
+    (async function() {
+      const token = await getDirectLineToken();
+      if (token) {
+        const directLine = window.WebChat.createDirectLine({ token });
+
+        // 渲染 Web Chat 並傳入使用者與 bot 的基本資訊
+        window.WebChat.renderWebChat({
+          directLine: directLine,
+          userID: userID,
+          username: username
+          // 如有需要，可傳入更多參數自訂樣式與行為
         }, document.getElementById('chatContainer'));
-    </script>
+      }
+    })();
+  </script>
 </body>
 </html>
