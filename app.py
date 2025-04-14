@@ -19,6 +19,8 @@ from config import DefaultConfig
 
 CONFIG = DefaultConfig()
 
+PORT = int(os.environ.get("PORT", 3978))
+
 # 設定 BotFrameworkAdapterSettings
 SETTINGS = BotFrameworkAdapterSettings(
     app_id=CONFIG.APP_ID,
@@ -118,6 +120,6 @@ for route in list(APP.router.routes()):
 
 if __name__ == "__main__":
     try:
-        web.run_app(APP, host="0.0.0.0", port=CONFIG.PORT)
+        web.run_app(APP, host="0.0.0.0", port=PORT)
     except Exception as error:
         raise error
