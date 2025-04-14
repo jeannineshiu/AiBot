@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime
 from http import HTTPStatus
 
-from aiohttp import web  # type: ignore
+from aiohttp import web, ClientSession  # 引入 ClientSession
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
 from botbuilder.core import (
@@ -89,12 +89,6 @@ async def get_direct_line_token(req: Request) -> Response:
                 status=HTTPStatus.INTERNAL_SERVER_ERROR,
             )
 
-        # Use the Bot Framework SDK to generate a Direct Line token
-        settings = BotFrameworkAdapterSettings(
-            app_id=None, app_password=None
-        )  # No need for app ID/password for token generation
-        temp_adapter = BotFrameworkAdapter(settings)
-
         # 準備產生權杖的請求
         token_parameters = {
             "user": {
@@ -103,17 +97,27 @@ async def get_direct_line_token(req: Request) -> Response:
             }
         }
 
-        token_response = await temp_adapter.get_direct_line_token(
-            direct_line_secret, token_parameters=token_parameters
-        )
-
-        if "token" in token_response:
-            return json_response({"token": token_response["token"]})
-        else:
-            return json_response(
-                {"error": "Failed to retrieve Direct Line token"},
-                status=HTTPStatus.INTERNAL_SERVER_ERROR,
-            )
+        # 使用 aiohttp.ClientSession 發送 HTTP 請求
+        async with ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {direct_line_secret}",
+                "Content-Type": "application/json",
+            }
+            async with session.post(
+                "https://directline.botframework.com/v3/directline/tokens/generate",
+                headers=headers,
+                json=token_parameters,
+            ) as response:
+                if response.status == 200:
+                    token_response = await response.json()
+                    return json_response({"token": token_response["token"]})
+                else:
+                    error_text = await response.text()
+                    print(f"Error generating token: {response.status} - {error_text}")
+                    return json_response(
+                        {"error": "Failed to retrieve Direct Line token"},
+                        status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    )
 
     except Exception as e:
         print(f"Error getting Direct Line token: {e}")
