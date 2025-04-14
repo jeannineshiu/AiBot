@@ -14,4 +14,3 @@ class DefaultConfig:
     APP_ID = os.environ.get("MicrosoftAppId", "72859357-2b32-4e77-bf95-22dc3b0d3a4c")
     APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "c06cb1e4-e981-49c5-8445-e1e160097927")
     APP_TYPE = os.environ.get("MicrosoftAppType", "MultiTenant")
-    APP_TENANTID = os.environ.get("MicrosoftAppTenantId", "")
