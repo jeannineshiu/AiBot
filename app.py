@@ -19,7 +19,7 @@ from config import DefaultConfig
 
 CONFIG = DefaultConfig()
 
-PORT = int(os.environ.get("PORT", 3978))
+PORT = int(os.environ.get("PORT", 8000))
 
 # 設定 BotFrameworkAdapterSettings
 SETTINGS = BotFrameworkAdapterSettings(
