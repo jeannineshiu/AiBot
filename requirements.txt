@@ -1,6 +1,6 @@
 botbuilder-integration-aiohttp>=4.15.0
-aiohttp>=3.8.1  # 您的 app.py 中使用了 aiohttp
-aiohttp_cors>=1.3.0 # 您的 app.py 中使用了 aiohttp_cors
-botbuilder-core>=4.15.0 # 您的 app.py 中使用了 botbuilder core
-botbuilder-schema>=4.15.0 # 您的 app.py 中使用了 botbuilder schema
-python-dotenv>=0.10.5 # 如果您在 config.py 中使用了 dotenv 來載入環境變數，則需要
+aiohttp>=3.8.1
+aiohttp_cors  # 嘗試安裝最新版本
+botbuilder-core>=4.15.0
+botbuilder-schema>=4.15.0
+python-dotenv>=0.10.5
