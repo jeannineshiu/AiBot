@@ -10,7 +10,11 @@ from http import HTTPStatus
 from aiohttp import web  # type: ignore
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
-from botbuilder.core import TurnContext, BotFrameworkAdapter, BotFrameworkAdapterSettings
+from botbuilder.core import (
+    TurnContext,
+    BotFrameworkAdapter,
+    BotFrameworkAdapterSettings,
+)
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity, ActivityTypes
 
@@ -90,8 +94,17 @@ async def get_direct_line_token(req: Request) -> Response:
             app_id=None, app_password=None
         )  # No need for app ID/password for token generation
         temp_adapter = BotFrameworkAdapter(settings)
+
+        # 準備產生權杖的請求
+        token_parameters = {
+            "user": {
+                "id": "dl_" + os.urandom(16).hex(),  # 生成一個隨機且難以猜測的 user.id
+                "name": "WebChatUser",  # 可以根據需要設定
+            }
+        }
+
         token_response = await temp_adapter.get_direct_line_token(
-            direct_line_secret
+            direct_line_secret, token_parameters=token_parameters
         )
 
         if "token" in token_response:
