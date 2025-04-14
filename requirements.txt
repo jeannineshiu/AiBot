@@ -1,6 +1,10 @@
 botbuilder-integration-aiohttp
 aiohttp
 aiohttp_cors  # 嘗試安裝最新版本
-botbuilder-core==4.16.2
-botbuilder-schema
 python-dotenv
+botbuilder-core==4.16.2
+botbuilder-schema==4.16.2
+botframework-connector==4.16.2
+botframework-streaming==4.16.2
+msrest
+requests
