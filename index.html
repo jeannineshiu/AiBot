@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>新版 Web Chat</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team7 AI Chatbot</title>
+  <link rel="stylesheet" href="styles.css" />
   <style>
     #chatContainer {
-      width: 400px;
-      height: 600px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      width: 420px;
+      height: 640px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
     }
   </style>
 </head>
@@ -23,11 +26,11 @@
 
   <script>
     const userID = 'user-' + Math.random().toString(36).substring(2, 15);
-    const username = 'guest';
+    const username = 'Guest';
 
     async function getDirectLineToken() {
       try {
-        const response = await fetch('/api/directlinetoken'); // 假設你的後端有這個 API 端點
+        const response = await fetch('/api/directlinetoken'); // Assuming your backend has this API endpoint
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -39,17 +42,28 @@
       }
     }
 
-    (async function() {
+    (async function () {
       const token = await getDirectLineToken();
       if (token) {
         const directLine = window.WebChat.createDirectLine({ token });
 
-        // 渲染 Web Chat 並傳入使用者與 bot 的基本資訊
         window.WebChat.renderWebChat({
           directLine: directLine,
           userID: userID,
-          username: username
-          // 如有需要，可傳入更多參數自訂樣式與行為
+          username: username,
+          styleOptions: {
+            botAvatarInitials: 'Bot',
+            userAvatarInitials: 'You',
+            hideUploadButton: true,
+            bubbleBackground: '#f0f0f0',
+            bubbleFromUserBackground: '#0078d4',
+            bubbleFromUserTextColor: 'white',
+            bubbleBorderRadius: 12,
+            fontSizeSmall: '90%',
+            bubbleMaxWidth: 300,
+            rootHeight: '100%',
+            backgroundColor: '#ffffff'
+          }
         }, document.getElementById('chatContainer'));
       }
     })();

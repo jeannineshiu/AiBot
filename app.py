@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime
 from http import HTTPStatus
 
-from aiohttp import web, ClientSession  # 引入 ClientSession
+from aiohttp import web, ClientSession
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
 from botbuilder.core import (
@@ -22,35 +22,26 @@ from bots import EchoBot
 from config import DefaultConfig
 
 CONFIG = DefaultConfig()
-
 PORT = int(os.environ.get("PORT", 8000))
 
-
-# 設定 BotFrameworkAdapterSettings
+# Setup BotFramework adapter with credentials
 SETTINGS = BotFrameworkAdapterSettings(
-    app_id=CONFIG.APP_ID, app_password=CONFIG.APP_PASSWORD
+    app_id=CONFIG.APP_ID,
+    app_password=CONFIG.APP_PASSWORD
 )
-
-# 建立新的 Adapter 實例
 ADAPTER = BotFrameworkAdapter(SETTINGS)
 
-
-# Catch-all for errors.
+# Global error handler for the bot
 async def on_error(context: TurnContext, error: Exception):
-    # This check writes out errors to console log .vs. app insights.
-    # NOTE: In production environment, you should consider logging this to Azure
-    #       application insights.
-    print(f"\n [on_turn_error] unhandled error: {error}", file=sys.stderr)
+    print(f"\n[on_turn_error] Unhandled error: {error}", file=sys.stderr)
     traceback.print_exc()
 
-    # Send a message to the user
+    # Send error message to user
     await context.send_activity("The bot encountered an error or bug.")
-    await context.send_activity(
-        "To continue to run this bot, please fix the bot source code."
-    )
-    # Send a trace activity if we're talking to the Bot Framework Emulator
+    await context.send_activity("To keep using the bot, please fix the source code.")
+
+    # Send trace activity for debugging in the Bot Framework Emulator
     if context.activity.channel_id == "emulator":
-        # Create a trace activity that contains the error object
         trace_activity = Activity(
             label="TurnError",
             name="on_turn_error Trace",
@@ -59,16 +50,14 @@ async def on_error(context: TurnContext, error: Exception):
             value=f"{error}",
             value_type="https://www.botframework.com/schemas/error",
         )
-        # Send a trace activity, which will be displayed in Bot Framework Emulator
         await context.send_activity(trace_activity)
-
 
 ADAPTER.on_turn_error = on_error
 
-# Create the Bot
+# Create bot instance
 BOT = EchoBot()
 
-
+# Endpoint for messages from the Bot Framework
 async def messages(req: Request) -> Response:
     body = await req.json()
     activity = Activity().deserialize(body)
@@ -80,32 +69,27 @@ async def messages(req: Request) -> Response:
     await ADAPTER.process_activity(activity, auth_header, call_bot_logic)
     return Response(status=HTTPStatus.OK)
 
-
-
+# Endpoint to generate Direct Line token
 async def get_direct_line_token(req: Request) -> Response:
     """
-    API endpoint to exchange Direct Line secret for a token.
-    This should be secured in a production environment.
+    API endpoint to exchange the Direct Line secret for a token.
+    Note: In production, this should be protected!
     """
     try:
-        # IMPORTANT: Never expose your Direct Line secret directly in client-side code!
-        # This is for demonstration purposes only.
         direct_line_secret = CONFIG.DIRECT_LINE_SECRET
         if not direct_line_secret:
             return json_response(
-                {"error": "Direct Line secret not configured"},
+                {"error": "Direct Line secret is not configured."},
                 status=HTTPStatus.INTERNAL_SERVER_ERROR,
             )
 
-        # 準備產生權杖的請求
         token_parameters = {
             "user": {
-                "id": "dl_" + os.urandom(16).hex(),  # 生成一個隨機且難以猜測的 user.id
-                "name": "WebChatUser",  # 可以根據需要設定
+                "id": "dl_" + os.urandom(16).hex(),
+                "name": "WebChatUser",
             }
         }
 
-        # 使用 aiohttp.ClientSession 發送 HTTP 請求
         async with ClientSession() as session:
             headers = {
                 "Authorization": f"Bearer {direct_line_secret}",
@@ -123,44 +107,43 @@ async def get_direct_line_token(req: Request) -> Response:
                     error_text = await response.text()
                     print(f"Error generating token: {response.status} - {error_text}")
                     return json_response(
-                        {"error": "Failed to retrieve Direct Line token"},
+                        {"error": "Failed to retrieve Direct Line token."},
                         status=HTTPStatus.INTERNAL_SERVER_ERROR,
                     )
-
     except Exception as e:
-        print(f"Error getting Direct Line token: {e}")
-        traceback.print_exc(file=sys.stderr)  # 打印完整追溯
+        print(f"Exception in get_direct_line_token: {e}")
+        traceback.print_exc(file=sys.stderr)
         return json_response(
-            {"error": str(e)}, status=HTTPStatus.INTERNAL_SERVER_ERROR
+            {"error": str(e)},
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
-
-# Create the app
+# Create the aiohttp web application
 APP = web.Application(middlewares=[aiohttp_error_middleware])
 
-# Add routes
+# Routes
 APP.router.add_post("/api/messages", messages)
-APP.router.add_get(
-    "/api/directlinetoken", get_direct_line_token
-)  # 新增獲取 token 的路由
+APP.router.add_get("/api/directlinetoken", get_direct_line_token)
 
-# Serve static files from the root folder
+# Serve static files (e.g., index.html, styles.css)
 static_path = os.path.dirname(__file__)
 APP.router.add_static("/", static_path, show_index=True)
 
-
-# Enable CORS
+# Enable CORS for all routes
 cors = setup_cors(
     APP,
     defaults={
         "*": ResourceOptions(
-            allow_credentials=True, expose_headers="*", allow_headers="*"
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*"
         )
     },
 )
 for route in list(APP.router.routes()):
     cors.add(route)
 
+# Run the app
 if __name__ == "__main__":
     try:
         web.run_app(APP, host="0.0.0.0", port=PORT)

@@ -8,6 +8,6 @@ class EchoBot(Bot):
         if turn_context.activity.members_added:
             for member in turn_context.activity.members_added:
                 if member.id != turn_context.activity.recipient.id:
-                    await turn_context.send_activity("歡迎使用 EchoBot！您可以輸入任何訊息，我會將它回覆給您。")
+                    await turn_context.send_activity("Welcome to EchoBot! You can type anything, and I will echo it back to you.")
         elif turn_context.activity.text:
-            await turn_context.send_activity(f"您說了：'{turn_context.activity.text}'")
+            await turn_context.send_activity(f"You said: '{turn_context.activity.text}'")
