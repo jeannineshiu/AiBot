@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime
 from http import HTTPStatus
 
-from aiohttp import web # type: ignore
+from aiohttp import web  # type: ignore
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
 from botbuilder.core import TurnContext, BotFrameworkAdapter, BotFrameworkAdapterSettings
@@ -21,14 +21,15 @@ CONFIG = DefaultConfig()
 
 PORT = int(os.environ.get("PORT", 8000))
 
+
 # 設定 BotFrameworkAdapterSettings
 SETTINGS = BotFrameworkAdapterSettings(
-    app_id=CONFIG.APP_ID,
-    app_password=CONFIG.APP_PASSWORD
+    app_id=CONFIG.APP_ID, app_password=CONFIG.APP_PASSWORD
 )
 
 # 建立新的 Adapter 實例
 ADAPTER = BotFrameworkAdapter(SETTINGS)
+
 
 # Catch-all for errors.
 async def on_error(context: TurnContext, error: Exception):
@@ -79,21 +80,34 @@ async def get_direct_line_token(req: Request) -> Response:
         # This is for demonstration purposes only.
         direct_line_secret = CONFIG.DIRECT_LINE_SECRET
         if not direct_line_secret:
-            return json_response({"error": "Direct Line secret not configured"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return json_response(
+                {"error": "Direct Line secret not configured"},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
 
         # Use the Bot Framework SDK to generate a Direct Line token
-        settings = BotFrameworkAdapterSettings(app_id=None, app_password=None) # No need for app ID/password for token generation
+        settings = BotFrameworkAdapterSettings(
+            app_id=None, app_password=None
+        )  # No need for app ID/password for token generation
         temp_adapter = BotFrameworkAdapter(settings)
-        token_response = await temp_adapter.get_direct_line_token(direct_line_secret)
+        token_response = await temp_adapter.get_direct_line_token(
+            direct_line_secret
+        )
 
         if "token" in token_response:
             return json_response({"token": token_response["token"]})
         else:
-            return json_response({"error": "Failed to retrieve Direct Line token"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+            return json_response(
+                {"error": "Failed to retrieve Direct Line token"},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
 
     except Exception as e:
         print(f"Error getting Direct Line token: {e}")
-        return json_response({"error": str(e)}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        traceback.print_exc(file=sys.stderr)  # 打印完整追溯
+        return json_response(
+            {"error": str(e)}, status=HTTPStatus.INTERNAL_SERVER_ERROR
+        )
 
 
 # Create the app
@@ -101,20 +115,24 @@ APP = web.Application(middlewares=[aiohttp_error_middleware])
 
 # Add routes
 APP.router.add_post("/api/messages", messages)
-APP.router.add_get("/api/directlinetoken", get_direct_line_token) # 新增獲取 token 的路由
+APP.router.add_get(
+    "/api/directlinetoken", get_direct_line_token
+)  # 新增獲取 token 的路由
 
 # Serve static files from the root folder
 static_path = os.path.dirname(__file__)
 APP.router.add_static("/", static_path, show_index=True)
 
+
 # Enable CORS
-cors = setup_cors(APP, defaults={
-    "*": ResourceOptions(
-        allow_credentials=True,
-        expose_headers="*",
-        allow_headers="*",
-    )
-})
+cors = setup_cors(
+    APP,
+    defaults={
+        "*": ResourceOptions(
+            allow_credentials=True, expose_headers="*", allow_headers="*"
+        )
+    },
+)
 for route in list(APP.router.routes()):
     cors.add(route)
 
