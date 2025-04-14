@@ -69,9 +69,17 @@ ADAPTER.on_turn_error = on_error
 BOT = EchoBot()
 
 
-# Listen for incoming requests on /api/messages
 async def messages(req: Request) -> Response:
-    return await ADAPTER.process(req, BOT)
+    body = await req.json()
+    activity = Activity().deserialize(body)
+    auth_header = req.headers.get("Authorization", "")
+
+    async def call_bot_logic(turn_context: TurnContext):
+        await BOT.on_turn(turn_context)
+
+    await ADAPTER.process_activity(activity, auth_header, call_bot_logic)
+    return Response(status=HTTPStatus.OK)
+
 
 
 async def get_direct_line_token(req: Request) -> Response:
