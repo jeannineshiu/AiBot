@@ -3,15 +3,51 @@
 # Licensed under the MIT License.
 
 import os
+from dotenv import load_dotenv
 
-""" Bot Configuration """
-
+load_dotenv() # Load environment variables from .env file
 
 class DefaultConfig:
     """ Bot Configuration """
 
-    PORT = 3978
-    APP_ID = os.environ.get("MicrosoftAppId", "72859357-2b32-4e77-bf95-22dc3b0d3a4c")
-    APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "c06cb1e4-e981-49c5-8445-e1e160097927")
+    #PORT = 3978
+    PORT = int(os.environ.get("PORT", 8000))
     APP_TYPE = os.environ.get("MicrosoftAppType", "MultiTenant")
-    DIRECT_LINE_SECRET = os.environ.get("DirectLineSecret", "BINBBR2SyvL6MSMZ68GcK6OSyyNPFfL3shvAmjiwjHSWRcN6PgR9JQQJ99BDACi5YpzAArohAAABAZBS3zmO.2AoI6rnXunvzjecfOqcqDIENnwmLk4IwYUoy225Vnb56P6nyqrb5JQQJ99BDACi5YpzAArohAAABAZBS1vqm") # 請替換為你的 Direct Line secret
+    
+    APP_ID = os.environ.get("MicrosoftAppId", "") # Or fetch from secure config
+    APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "") # Or fetch from secure config
+    DIRECT_LINE_SECRET = os.environ.get("DirectLineSecret", "") # Or fetch from secure config
+
+    AZURE_SEARCH_SERVICE = os.getenv("AZURE_SEARCH_SERVICE", "")
+    AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX", "")
+    AZURE_STORAGE_ACCOUNT = os.getenv("AZURE_STORAGE_ACCOUNT", "")
+    AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "")
+
+    # === Azure OpenAI ===
+    OPENAI_HOST = os.getenv("OPENAI_HOST", "azure") # "azure", "azure_custom", "openai", "local"
+    AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # For OpenAI API
+    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT") # Deployment for chat model
+    AZURE_OPENAI_CHATGPT_MODEL = os.environ.get("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
+    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT") # Deployment for embedding model
+    AZURE_OPENAI_EMB_MODEL_NAME = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
+    AZURE_OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_OPENAI_EMB_DIMENSIONS") or 1536)
+    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-02-01" # Use a recent, appropriate version
+    AZURE_OPENAI_API_KEY_OVERRIDE = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE") # Optional: Use if not using Azure credential
+    AZURE_OPENAI_CUSTOM_URL = os.getenv("AZURE_OPENAI_CUSTOM_URL") # Required if OPENAI_HOST="azure_custom"
+
+    # === Azure AI Search ===
+    AZURE_SEARCH_SERVICE = os.getenv("AZURE_SEARCH_SERVICE", "")
+    AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX", "")
+    AZURE_SEARCH_QUERY_LANGUAGE = os.getenv("AZURE_SEARCH_QUERY_LANGUAGE", "en-us")
+    AZURE_SEARCH_QUERY_SPELLER = os.getenv("AZURE_SEARCH_QUERY_SPELLER", "lexicon")
+    KB_FIELDS_CONTENT = os.getenv("KB_FIELDS_CONTENT", "content")
+    KB_FIELDS_SOURCEPAGE = os.getenv("KB_FIELDS_SOURCEPAGE", "sourcepage")
+
+    # === Azure Storage ===
+    AZURE_STORAGE_ACCOUNT = os.getenv("AZURE_STORAGE_ACCOUNT", "")
+    AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "")
+
+    # === Azure Identity (for passwordless access) ===
+    AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID")
+    AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID") # Optional: For user-assigned managed identity

@@ -1,0 +1,28 @@
+# requirements_prep.txt for Data Preprocessing (prepdocs.py)
+
+# Azure SDKs for Preprocessing
+azure-identity              # For Azure authentication (e.g., Azure CLI Credential)
+azure-search-documents      # For Azure AI Search (using stable release)
+azure-storage-blob         # For Azure Blob Storage interaction
+openai          # For Azure OpenAI / OpenAI API (Embeddings)
+azure-ai-documentintelligence # For Document Intelligence (used in prepdocs.py for non-MD files or complex parsing)
+
+# RAG Utilities
+tiktoken                     # For token counting
+
+# Configuration and Helpers
+python-dotenv                # Assuming load_azd_env uses this or similar mechanism
+# load_azd_env                      # If load_azd_env is a published package, list it here. If it's a local script, ensure it's present.
+
+# Logging and File Parsing Dependencies seen in prepdocs.py
+rich>=13.0.0                        # Used for enhanced logging output in prepdocs.py
+aiohttp>=3.8.0                      # Often needed by async Azure SDKs
+pymupdf>=1.24.0                     # Dependency for LocalPdfParser used in prepdocs.py
+beautifulsoup4>=4.12.0              # Dependency for LocalHTMLParser used in prepdocs.py
+isodate                             # Often required by Azure SDKs for date parsing
+
+# --- Notes ---
+# - This assumes 'prepdocslib' is local Python code available to prepdocs.py.
+# - This list includes dependencies for features present in prepdocs.py (like PDF/HTML parsing fallbacks, DI),
+#   even if you currently only process Markdown files. This ensures the script runs as written.
+# - You do NOT need botbuilder-* or aiohttp-cors here.
