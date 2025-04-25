@@ -36,7 +36,7 @@ from azure.identity.aio import ( # Added
     DefaultAzureCredential, # Use DefaultAzureCredential for flexibility
     get_bearer_token_provider,
 )
-from azure.identity import CredentialNotFoundError
+from azure.identity import CredentialUnavailableError
 from azure.search.documents.aio import SearchClient                 # Added
 from azure.storage.blob.aio import ContainerClient                 # Added
 from openai import AsyncAzureOpenAI, AsyncOpenAI                   # Added
@@ -73,7 +73,7 @@ async def setup_azure_clients(app: web.Application):
         # Perform a quick check to ensure the credential works
         await azure_credential.get_token("https://management.azure.com/.default")
         print("Azure credential obtained successfully.")
-    except CredentialNotFoundError:
+    except CredentialUnavailableError:
         print("ERROR: Could not find Azure credentials.")
         print("Please run 'az login' or configure environment variables for a service principal or managed identity.")
         # Optionally fall back to API key if needed and configured
@@ -170,7 +170,7 @@ async def setup_azure_clients(app: web.Application):
     except Exception as e:
         print(f"ERROR: Failed to initialize Blob Storage client: {e}")
         # Check if it was a credential error and key fallback might work
-        if isinstance(e, CredentialNotFoundError) and not azure_credential:
+        if isinstance(e, CredentialUnavailableError) and not azure_credential:
             print("Credential not found, ensure AZURE_STORAGE_KEY env var is set if not using credentials.")
         # Raise the exception as Blob client is considered required
         raise
