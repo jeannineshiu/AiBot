@@ -1,0 +1,25 @@
+# Environment variables (contains secrets!)
+.env
+
+# Python virtual environment folders
+venv/
+venv_prep/
+env/
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE folders
+.vscode/
+.idea/
+
+# macOS folder attributes
+.DS_Store
+
+# Build artifacts (example)
+dist/
+build/
+*.egg-info/
