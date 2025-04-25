@@ -1,4 +1,4 @@
-botbuilder-integration-aiohttp
+botbuilder-integration-aiohttp==4.16.2
 aiohttp>=3.8.1
 aiohttp_cors 
 python-dotenv
@@ -13,7 +13,7 @@ requests
 # Azure SDKs for RAG Runtime
 azure-identity        # For authentication
 azure-search-documents # For Azure AI Search (use stable release)
-azure-storage-Blob # For Blob Storage interaction
+azure-storage-blob # For Blob Storage interaction
 openai      # For Azure OpenAI / OpenAI (v1.x required)
 
 # RAG Utilities

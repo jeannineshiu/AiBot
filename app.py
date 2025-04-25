@@ -36,7 +36,7 @@ from azure.identity.aio import ( # Added
     DefaultAzureCredential, # Use DefaultAzureCredential for flexibility
     get_bearer_token_provider,
 )
-from azure.core.exceptions import CredentialNotFoundError
+from azure.identity import CredentialNotFoundError
 from azure.search.documents.aio import SearchClient                 # Added
 from azure.storage.blob.aio import ContainerClient                 # Added
 from openai import AsyncAzureOpenAI, AsyncOpenAI                   # Added
