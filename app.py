@@ -25,7 +25,8 @@ from botbuilder.core import (
 )
 
 
-from botbuilder.core.integration import aiohttp_error_middleware, BotFrameworkHttpClient
+# Correct import path
+from botbuilder.integration.aiohttp import aiohttp_error_middleware, BotFrameworkHttpClient
 from botbuilder.schema import Activity, ActivityTypes
 
 # --- RAG Imports (from Quart example structure) ---
