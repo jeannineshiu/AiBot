@@ -18,5 +18,18 @@ openai      # For Azure OpenAI / OpenAI (v1.x required)
 
 # RAG Utilities
 tiktoken            # For token counting
-
-
+tenacity
+msal
+cryptography
+PyJWT
+Pillow
+types-Pillow
+pypdf
+PyMuPDF
+beautifulsoup4
+types-beautifulsoup4
+msgraph-sdk
+python-dotenv
+prompty
+rich
+typing-extensions
