@@ -12,7 +12,7 @@ from typing import Any, Union, Dict
 from aiohttp import web, ClientSession
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
-
+from aiohttp import web
 
 # --- BotBuilder Imports ---
 from botbuilder.core import (
@@ -357,6 +357,57 @@ async def get_direct_line_token(req: Request) -> Response:
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
+# === ADD NEW Health Check Handler ===
+async def health_check_handler(request: web.Request) -> web.Response:
+    """
+    Handles /health requests, checking the application's health status.
+    """
+    # Retrieve clients and bot instance stored in the app context
+    app = request.app
+    azure_clients = app.get("azure_clients")
+    bot_instance = app.get("bot_instance") # Assumes BOT is stored in app["bot_instance"] during startup
+
+    # --- Add your health check logic here ---
+    is_healthy = True
+    status_text = "OK"
+    status_code = 200
+
+    # Example Check 1: Are essential Azure clients and the RAG approach initialized?
+    if not azure_clients or \
+       not azure_clients.get("credential") or \
+       not azure_clients.get("openai") or \
+       not azure_clients.get("search") or \
+       not azure_clients.get("blob") or \
+       not azure_clients.get("rag_approach"): # Check if RAG Approach is ready
+        is_healthy = False
+        status_text = "Error: Required Azure clients or RAG approach not initialized."
+        status_code = 503 # Service Unavailable
+
+    # Example Check 2: Is the Bot instance created?
+    if is_healthy and not bot_instance:
+        is_healthy = False
+        status_text = "Error: Bot instance not created."
+        status_code = 503 # Service Unavailable
+
+    # Example Check 3: (Optional) Check database connection, other external services, etc.
+    # try:
+    #     # db_connection = await get_db_connection()
+    #     # await db_connection.ping() # Assuming a ping method exists
+    #     pass # If check succeeds
+    # except Exception as e:
+    #     print(f"Health check failed: Dependency error - {e}")
+    #     is_healthy = False
+    #     status_text = f"Error: Dependency check failed - {e}"
+    #     status_code = 503
+
+    # --- Return the response based on checks ---
+    if is_healthy:
+        print("[Health Check] Status: OK")
+        return web.Response(status=status_code, text=status_text)
+    else:
+        print(f"[Health Check] Status: Unhealthy - {status_text}")
+        # Return a 5xx status code to indicate unhealthy state
+        return web.Response(status=status_code, text=status_text)
 
 # === App Initialization and Startup/Shutdown Logic ===
 async def on_startup(app: web.Application):
@@ -373,7 +424,8 @@ async def on_startup(app: web.Application):
 
     # Pass state and RAG approach to the bot constructor
     BOT = RagBot(CONVERSATION_STATE, USER_STATE, rag_approach)
-    print("Bot instance created.")
+    app["bot_instance"] = BOT # <--- Store the Bot instance in the app context
+    print("Bot instance created and added to app context.")
 
 async def on_shutdown(app: web.Application):
     """ Executes when the application shutdowns"""
@@ -386,6 +438,7 @@ def create_app() -> web.Application:
     # Add routes
     app.router.add_post("/api/messages", messages)
     app.router.add_get("/api/directlinetoken", get_direct_line_token) # Keep if needed
+    app.router.add_get("/health", health_check_handler)
 
     # Serve static files (if you have a web chat frontend)
     static_path = os.path.dirname(__file__) # Assumes index.html is in the same dir
@@ -415,8 +468,13 @@ def create_app() -> web.Application:
 if __name__ == "__main__":
     APP = create_app()
     try:
-        print(f"Starting web server on http://localhost:{PORT}")
+        print(">>> Starting web.run_app...")
         web.run_app(APP, host="0.0.0.0", port=PORT)
+        print(">>> web.run_app exited cleanly.") # Should not be reached quickly
     except Exception as error:
         print(f"Error running web app: {error}")
+        import traceback
+        traceback.print_exc()
         raise error
+    finally:
+         print(">>> Script exiting __main__ block.")
