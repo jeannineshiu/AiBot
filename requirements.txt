@@ -30,6 +30,6 @@ beautifulsoup4
 types-beautifulsoup4
 msgraph-sdk
 python-dotenv
-prompty
+prompty==0.1.50
 rich
 typing-extensions
