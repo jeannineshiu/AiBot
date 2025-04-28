@@ -41,7 +41,7 @@ from azure.search.documents.aio import SearchClient                 # Added
 from azure.storage.blob.aio import ContainerClient                 # Added
 from openai import AsyncAzureOpenAI, AsyncOpenAI                   # Added
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
-from approaches.promptmanager import PromptManager
+from approaches.promptmanager import PromptyManager
 from bots import RagBot
 from config import DefaultConfig
 
@@ -175,14 +175,12 @@ async def setup_azure_clients(app: web.Application):
         # Raise the exception as Blob client is considered required
         raise
 
-    # 5. Instantiate Prompt Manager (Assuming prompts are in 'approaches/prompts')
+    # 5. Instantiate Prompt Manager
     try:
-        # Adjust the path if your prompts are elsewhere
-        prompts_root = os.path.join(os.path.dirname(__file__), "approaches", "prompts")
-        prompt_manager = PromptManager(prompts_root=prompts_root)
-        print(f"PromptManager initialized with root: {prompts_root}")
+        prompt_manager = PromptyManager()
+        print("PromptyManager initialized.") # Log message updated
     except Exception as e:
-        print(f"ERROR: Failed to initialize PromptManager: {e}")
+        print(f"ERROR: Failed to initialize PromptyManager: {e}") # Log message updated
         raise
 
     # 6. Instantiate RAG Approach (was step 5)
