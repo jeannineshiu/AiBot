@@ -41,7 +41,7 @@ from azure.search.documents.aio import SearchClient                 # Added
 from azure.storage.blob.aio import ContainerClient                 # Added
 from openai import AsyncAzureOpenAI, AsyncOpenAI                   # Added
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
-
+from approaches.promptmanager import PromptManager
 from bots import RagBot
 from config import DefaultConfig
 
@@ -175,25 +175,34 @@ async def setup_azure_clients(app: web.Application):
         # Raise the exception as Blob client is considered required
         raise
 
+    # 5. Instantiate Prompt Manager (Assuming prompts are in 'approaches/prompts')
+    try:
+        # Adjust the path if your prompts are elsewhere
+        prompts_root = os.path.join(os.path.dirname(__file__), "approaches", "prompts")
+        prompt_manager = PromptManager(prompts_root=prompts_root)
+        print(f"PromptManager initialized with root: {prompts_root}")
+    except Exception as e:
+        print(f"ERROR: Failed to initialize PromptManager: {e}")
+        raise
 
-    # 5. Instantiate RAG Approach
+    # 6. Instantiate RAG Approach (was step 5)
     try:
         # We removed AuthenticationHelper as it's less relevant for bot scenarios
         # Pass None for auth_helper if the approach expects it
         rag_approach = ChatReadRetrieveReadApproach(
             search_client=AZURE_CLIENTS["search"],
             openai_client=AZURE_CLIENTS["openai"],
-            auth_helper=None, # Assuming approach can handle None or doesn't need it here
+            auth_helper=None,
             chatgpt_model=CONFIG.AZURE_OPENAI_CHATGPT_MODEL,
-            chatgpt_deployment=CONFIG.AZURE_OPENAI_CHATGPT_DEPLOYMENT, # Required for Azure OpenAI
+            chatgpt_deployment=CONFIG.AZURE_OPENAI_CHATGPT_DEPLOYMENT,
             embedding_model=CONFIG.AZURE_OPENAI_EMB_MODEL_NAME,
-            embedding_deployment=CONFIG.AZURE_OPENAI_EMB_DEPLOYMENT, # Required for Azure OpenAI
+            embedding_deployment=CONFIG.AZURE_OPENAI_EMB_DEPLOYMENT,
             embedding_dimensions=CONFIG.AZURE_OPENAI_EMB_DIMENSIONS,
             sourcepage_field=CONFIG.KB_FIELDS_SOURCEPAGE,
             content_field=CONFIG.KB_FIELDS_CONTENT,
             query_language=CONFIG.AZURE_SEARCH_QUERY_LANGUAGE,
             query_speller=CONFIG.AZURE_SEARCH_QUERY_SPELLER,
-            # Pass other parameters if needed by the specific approach constructor
+            prompt_manager=prompt_manager, # <--- ADD THIS LINE
         )
         AZURE_CLIENTS["rag_approach"] = rag_approach
         print("RAG Approach initialized.")
