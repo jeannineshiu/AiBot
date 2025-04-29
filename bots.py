@@ -69,6 +69,7 @@ class RagBot(ActivityHandler):
         # Override default on_turn to save state changes after each turn
         print(f"[on_turn] Activity received: type={turn_context.activity.type}, text={turn_context.activity.text}")
         await super().on_turn(turn_context)
+
         # Save any state changes that might have occurred during the turn.
         await self.conversation_state.save_changes(turn_context, False)
         if self.user_state:
@@ -80,44 +81,45 @@ class RagBot(ActivityHandler):
         """ Send a welcome message to the user and tell them what the bot does. """
         print(f"on_members_added_activity triggered for {len(members_added)} members.") # Add log
         for member in members_added:
-            print(f"  Member ID: {member.id}, Recipient ID: {turn_context.activity.recipient.id}")
-            if member.id != turn_context.activity.recipient.id:
-                await turn_context.send_activity(
-                    MessageFactory.text(
-                        "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
-                    )
+            print(f"  Member ID: {member.id}, Recipient ID: {turn_context.activity.recipient.id}") # Add log
+            # Temporarily remove the condition for testing:
+            # if member.id != turn_context.activity.recipient.id:
+            await turn_context.send_activity(
+                MessageFactory.text(
+                    "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
                 )
+            )
 
     # --- THIS METHOD IS MODIFIED ---
     async def on_message_activity(self, turn_context: TurnContext):
         """ Main handler for incoming text messages """
         if turn_context.activity.type == ActivityTypes.message and turn_context.activity.text:
             user_message_text = turn_context.activity.text
-            print(f"[on_message_activity] User message received: '{user_message_text}'") # Log input
+            print(f"[on_message_activity] User message received: '{user_message_text}'")  # Log input
 
             # Show typing indicator
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
-            # 1. Get conversation history from state
-            conversation_history = await self.conversation_history_accessor.get(turn_context, [])
-            print(f"[on_message_activity] Retrieved conversation history (length): {len(conversation_history)}") # Log history length
+            # 1. Get conversation history from state (with safe fallback)
+            conversation_history = await self.conversation_history_accessor.get(turn_context, default_value=[])
+            if conversation_history is None:
+                print("[on_message_activity] WARNING: conversation_history was None, initializing empty list.")
+                conversation_history = []
+
+            print(f"[on_message_activity] Retrieved conversation history (length): {len(conversation_history)}")  # Log history length
 
             # 2. Prepare messages for RAG approach
-            # Ensure format matches ChatCompletionMessageParam (dict with 'role' and 'content')
             messages_for_rag: List[Dict[str, str]] = conversation_history + [{"role": "user", "content": user_message_text}]
-            print(f"[on_message_activity] Prepared messages for RAG (total): {len(messages_for_rag)}") # Log total messages
+            print(f"[on_message_activity] Prepared messages for RAG (total): {len(messages_for_rag)}")  # Log total messages
 
-            # 3. Call the RAG approach (using run_until_final_call signature)
-            answer = "Sorry, I couldn't generate a response." # Default answer
+            # 3. Call the RAG approach
+            answer = "Sorry, I couldn't generate a response."
             try:
                 print("[on_message_activity] Calling RAG approach (run_until_final_call)...")
-                # Set parameters for run_until_final_call
-                should_stream = False # Assuming non-streaming for standard chat
-                overrides = {}      # Pass any overrides if needed, e.g., {"top": 5}
-                auth_claims = {}    # Pass empty dict if auth claims aren't used for filtering
+                should_stream = False
+                overrides = {}
+                auth_claims = {}
 
-                # --- Make the corrected call ---
-                # Note: run_until_final_call returns a tuple: (extra_info, chat_coroutine)
                 extra_info, chat_coroutine = await self.rag_approach.run_until_final_call(
                     messages=messages_for_rag,
                     overrides=overrides,
@@ -125,44 +127,32 @@ class RagBot(ActivityHandler):
                     should_stream=should_stream
                 )
 
-                # --- Await the result (for non-streaming) ---
                 print("[on_message_activity] Awaiting chat completion coroutine...")
-                # The coroutine returns an OpenAI ChatCompletion object when awaited
                 completion = await chat_coroutine
 
-                # --- Extract the answer ---
                 if completion and completion.choices and completion.choices[0].message and completion.choices[0].message.content:
                     answer = completion.choices[0].message.content
-                    print(f"[on_message_activity] RAG Answer extracted: {answer[:100]}...") # Log extracted answer (truncated)
+                    print(f"[on_message_activity] RAG Answer extracted: {answer[:100]}...")
                 else:
                     print("[on_message_activity] RAG approach returned empty or invalid completion structure.")
-                    # Keep the default "Sorry, I couldn't generate a response." answer
-
-                # TODO: Potentially use extra_info for logging, citations etc.
-                # print(f"[on_message_activity] RAG Extra Info: {extra_info}")
 
             except Exception as e:
                 print(f"[on_message_activity] Error calling RAG approach or processing result: {e}")
                 traceback.print_exc()
-                # Keep the default error answer
                 answer = "Sorry, I encountered an error while processing your request."
 
-            # 4. Send the response to the user
-            print(f"[on_message_activity] Sending response to user: {answer[:100]}...") # Log sending response
+            # 4. Send response
+            print(f"[on_message_activity] Sending response to user: {answer[:100]}...")
             await turn_context.send_activity(MessageFactory.text(answer))
 
-            # 5. Update conversation history in state
+            # 5. Update history
             if answer != "Sorry, I encountered an error while processing your request.":
-                 updated_history = messages_for_rag + [{"role": "assistant", "content": answer}]
-                 # Optional: Limit history length
-                 # MAX_HISTORY_LENGTH = 10
-                 # updated_history = updated_history[-MAX_HISTORY_LENGTH:]
-                 print(f"[on_message_activity] Updating conversation history (new length): {len(updated_history)}") # Log history update
-                 await self.conversation_history_accessor.set(turn_context, updated_history)
+                updated_history = messages_for_rag + [{"role": "assistant", "content": answer}]
+                print(f"[on_message_activity] Updating conversation history (new length): {len(updated_history)})")
+                await self.conversation_history_accessor.set(turn_context, updated_history)
             else:
-                 print("[on_message_activity] Skipping history update due to error.")
+                print("[on_message_activity] Skipping history update due to error.")
 
         else:
-            # Handle other activity types like endOfConversation etc. if needed
-            print(f"[on_message_activity] Unhandled activity type received: {turn_context.activity.type}") # Log unhandled
+            print(f"[on_message_activity] Unhandled activity type received: {turn_context.activity.type}")
             await turn_context.send_activity(f"[{self.__class__.__name__}] Unhandled activity type: {turn_context.activity.type}")
