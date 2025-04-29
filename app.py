@@ -510,13 +510,16 @@ def create_app() -> web.Application:
     if os.path.isdir(static_path):
         app.router.add_static("/", static_path, show_index=True, name='static')
         log_print(f"Serving static files from: {static_path}")
-    else:
-        log_print(f"Static file directory not found (expected at: {static_path}). Skipping static file serving.")
-        # Optional: Serve index.html from root if needed and present
-        # root_path = os.path.dirname(__file__)
-        # if os.path.exists(os.path.join(root_path, "index.html")):
-        #    app.router.add_get("/", lambda req: web.FileResponse(os.path.join(root_path, "index.html")))
-        #    log_print("Serving index.html from application root.")
+
+        index_path = os.path.join(static_path, "index.html")
+        if os.path.exists(index_path):
+            async def serve_index(request):
+                return web.FileResponse(index_path)
+            app.router.add_get("/", serve_index)
+            log_print("Route added: GET / => index.html")
+        else:
+            log_print("Warning: index.html not found in static path.")
+
 
 
     # Add startup and shutdown handlers
