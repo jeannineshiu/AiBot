@@ -57,10 +57,10 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_… }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_… }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_… }}
-
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6B03F930AFAF4B1D96FABDE33BB5A168 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2FB6A7F7C85F434DB4EEC35FEA1EE4EB }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A243F752CDFD4CDDA5B3E0A5680AE856 }}
+    
       - name: Configure Run-From-Package & disable SCM build
         run: |
           az webapp config appsettings set \
