@@ -83,10 +83,13 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2FB6A7F7C85F434DB4EEC35FEA1EE4EB }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A243F752CDFD4CDDA5B3E0A5680AE856 }}
 
-      - name: Set runtime (Optional but safe)
-        run: az webapp config set --resource-group DefaultResourceGroup-WEU \
-                                  --name myAIBotAppService \
-                                  --linux-fx-version "PYTHON|3.9"
+      - name: Set Python runtime stack explicitly
+        run: |
+          az webapp config set \
+            --resource-group DefaultResourceGroup-WEU \
+            --name myAIBotAppService \
+            --generic-configurations "{\"linuxFxVersion\": \"PYTHON|3.9\"}"
+        
 
       - name: 'Deploy using Zip Deploy'
         run: |

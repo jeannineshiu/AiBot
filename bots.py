@@ -100,7 +100,8 @@ class RagBot(ActivityHandler):
             await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
             # 1. Get conversation history from state (with safe fallback)
-            conversation_history = await self.conversation_history_accessor.get(turn_context, default_value=[])
+            conversation_history = await self.conversation_history_accessor.get(turn_context, lambda: [])
+
             if conversation_history is None:
                 print("[on_message_activity] WARNING: conversation_history was None, initializing empty list.")
                 conversation_history = []
