@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - myAIBotAppService
 
 on:
@@ -14,90 +10,70 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      - name: Create and start virtual environment
+      - name: Create & populate virtualenv (named “antenv”)
         run: |
-          python -m venv venv
-          source venv/bin/activate
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: |
+          python -m venv antenv
+          source antenv/bin/activate
           python -m pip install --upgrade pip
-          pip install --cache-dir ~/.cache/pip -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+          pip install -r requirements.txt
+          deactivate
 
-      - name: Zip artifact for deployment
+      - name: Zip app + venv for Run-From-Package
         run: |
-          zip -r release.zip . -x "venv/*" ".git/*" ".github/*" "*.zip" "release.zip" "__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
+          zip -r release.zip . \
+            -x ".git/*" ".github/*" "__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
 
-      - name: Upload artifact for deployment jobs
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            !venv/
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    environment: Production
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: python-app
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-
-      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6B03F930AFAF4B1D96FABDE33BB5A168 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2FB6A7F7C85F434DB4EEC35FEA1EE4EB }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A243F752CDFD4CDDA5B3E0A5680AE856 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_… }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_… }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_… }}
 
-      - name: Set Python runtime stack explicitly
+      - name: Configure Run-From-Package & disable SCM build
         run: |
-          az webapp config set \
+          az webapp config appsettings set \
             --resource-group DefaultResourceGroup-WEU \
             --name myAIBotAppService \
-            --generic-configurations "{\"linuxFxVersion\": \"PYTHON|3.9\"}"
+            --settings WEBSITE_RUN_FROM_PACKAGE=1 \
+                       SCM_DO_BUILD_DURING_DEPLOYMENT=false
 
-      - name: Wait for SCM to restart
+      - name: Wait for SCM container restart
         run: sleep 30
 
-      - name: Deploy to Azure Web App
+      - name: Deploy via Zip
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
-          app-name: 'myAIBotAppService'
-          slot-name: 'Production'
-          
-          
+          app-name: myAIBotAppService
+          package: release.zip
