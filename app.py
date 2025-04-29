@@ -61,6 +61,11 @@ log_print(f"Configuration loaded. Port set to: {PORT}")
 logging.getLogger("azure").setLevel(logging.WARNING)
 log_print("Azure SDK logging level set to WARNING.")
 
+def init_func():
+    """Called by `aiohttp.web` startup command."""
+    return create_app()
+
+
 # === Azure Client Setup ===
 # Shared clients dictionary to store initialized clients
 AZURE_CLIENTS: Dict[str, Any] = {}
