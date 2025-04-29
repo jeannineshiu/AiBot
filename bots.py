@@ -62,11 +62,13 @@ class RagBot(ActivityHandler):
 
         # Create state property accessors
         self.conversation_history_accessor = self.conversation_state.create_property("ConversationHistory")
+        print("[RagBot] Initialized successfully with ConversationState and RAG approach.")
+
 
     async def on_turn(self, turn_context: TurnContext):
         # Override default on_turn to save state changes after each turn
+        print(f"[on_turn] Activity received: type={turn_context.activity.type}, text={turn_context.activity.text}")
         await super().on_turn(turn_context)
-
         # Save any state changes that might have occurred during the turn.
         await self.conversation_state.save_changes(turn_context, False)
         if self.user_state:
@@ -78,14 +80,13 @@ class RagBot(ActivityHandler):
         """ Send a welcome message to the user and tell them what the bot does. """
         print(f"on_members_added_activity triggered for {len(members_added)} members.") # Add log
         for member in members_added:
-            print(f"  Member ID: {member.id}, Recipient ID: {turn_context.activity.recipient.id}") # Add log
-            # Temporarily remove the condition for testing:
-            # if member.id != turn_context.activity.recipient.id:
-            await turn_context.send_activity(
-                MessageFactory.text(
-                    "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
+            print(f"  Member ID: {member.id}, Recipient ID: {turn_context.activity.recipient.id}")
+            if member.id != turn_context.activity.recipient.id:
+                await turn_context.send_activity(
+                    MessageFactory.text(
+                        "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
+                    )
                 )
-            )
 
     # --- THIS METHOD IS MODIFIED ---
     async def on_message_activity(self, turn_context: TurnContext):
