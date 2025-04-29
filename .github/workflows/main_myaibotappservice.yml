@@ -46,7 +46,7 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip . -x "venv/*" ".git/*" ".github/*" "*.zip" "release.zip"
+          zip -r release.zip . -x "venv/*" ".git/*" ".github/*" "*.zip" "release.zip" "__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -91,10 +91,11 @@ jobs:
             --generic-configurations "{\"linuxFxVersion\": \"PYTHON|3.9\"}"
         
 
-      - name: 'Deploy using Zip Deploy'
-        run: |
-          az webapp deploy --resource-group DefaultResourceGroup-WEU \
-                          --name myAIBotAppService \
-                          --src-path release.zip \
-                          --type zip
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
+        with:
+          app-name: 'myAIBotAppService'
+          slot-name: 'Production'
+          
           
