@@ -89,9 +89,11 @@ jobs:
             --resource-group DefaultResourceGroup-WEU \
             --name myAIBotAppService \
             --generic-configurations "{\"linuxFxVersion\": \"PYTHON|3.9\"}"
-        
 
-      - name: 'Deploy to Azure Web App'
+      - name: Wait for SCM to restart
+        run: sleep 30
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
