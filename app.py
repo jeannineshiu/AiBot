@@ -234,7 +234,7 @@ async def setup_azure_clients(app: web.Application):
         rag_approach = ChatReadRetrieveReadApproach(
             search_client=AZURE_CLIENTS["search"],
             openai_client=AZURE_CLIENTS["openai"],
-            auth_helper=no_op_helper,               # <<< use NoOpAuthHelper()
+            auth_helper=no_op_helper,
             chatgpt_model=CONFIG.AZURE_OPENAI_CHATGPT_MODEL,
             chatgpt_deployment=CONFIG.AZURE_OPENAI_CHATGPT_DEPLOYMENT,
             embedding_model=CONFIG.AZURE_OPENAI_EMB_MODEL_NAME,
@@ -246,6 +246,8 @@ async def setup_azure_clients(app: web.Application):
             query_speller=CONFIG.AZURE_SEARCH_QUERY_SPELLER,
             prompt_manager=prompt_manager,
         )
+        # Force‐inject the helper
+        rag_approach.auth_helper = no_op_helper
         AZURE_CLIENTS["rag_approach"] = rag_approach
         log_print("RAG Approach initialized successfully.")
     except Exception as e:
