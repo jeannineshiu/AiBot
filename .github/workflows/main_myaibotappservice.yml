@@ -21,18 +21,15 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Create & populate virtualenv (named “antenv”)
-        run: |
-          python -m venv antenv
-          source antenv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          deactivate
+      # (Optional) Run your tests here
+      # - name: Run tests
+      #   run: |
+      #     python -m pytest
 
-      - name: Zip app + venv for Run-From-Package
+      - name: Zip application for deployment
         run: |
           zip -r release.zip . \
-            -x ".git/*" ".github/*" "__pycache__/*" "*.pyc" "*.pyo" ".DS_Store"
+            -x ".git/*" ".github/*" "__pycache__/*" "*.pyc" "*.pyo" ".DS_Store" "antenv/*"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -60,20 +57,10 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6B03F930AFAF4B1D96FABDE33BB5A168 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2FB6A7F7C85F434DB4EEC35FEA1EE4EB }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A243F752CDFD4CDDA5B3E0A5680AE856 }}
-    
-      - name: Configure Run-From-Package & disable SCM build
-        run: |
-          az webapp config appsettings set \
-            --resource-group DefaultResourceGroup-WEU \
-            --name myAIBotAppService \
-            --settings WEBSITE_RUN_FROM_PACKAGE=1 \
-                       SCM_DO_BUILD_DURING_DEPLOYMENT=false
-
-      - name: Wait for SCM container restart
-        run: sleep 30
-
-      - name: Deploy via Zip
+          
+      - name: Deploy to Azure Web App (with Oryx build)
         uses: azure/webapps-deploy@v3
         with:
           app-name: myAIBotAppService
           package: release.zip
+          slot-name: Production
