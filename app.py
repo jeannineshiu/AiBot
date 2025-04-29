@@ -46,6 +46,13 @@ from approaches.promptmanager import PromptyManager
 from bots import RagBot
 from config import DefaultConfig
 
+# Add this below your imports (or anywhere before you instantiate the approach):
+class NoOpAuthHelper:
+    """A dummy auth helper that applies no security filter."""
+    def build_security_filters(self, overrides, auth_claims):
+        # Always return None → no additional search filter
+        return None
+
 # --- Logging Helper ---
 def log_print(message):
     """Helper function to print messages with timestamps."""
@@ -219,13 +226,15 @@ async def setup_azure_clients(app: web.Application):
         raise
 
     # 6. Instantiate RAG Approach
-    log_print("Initializing RAG Approach (ChatReadRetrieveReadApproach)...")
+    log_print("Initializing RAG Approach (ChatReadRetrieveReadApproach)…")
     try:
-        # Pass required clients and configuration
+        # Replace auth_helper=None with an instance of NoOpAuthHelper()
+        no_op_helper = NoOpAuthHelper()
+
         rag_approach = ChatReadRetrieveReadApproach(
             search_client=AZURE_CLIENTS["search"],
             openai_client=AZURE_CLIENTS["openai"],
-            auth_helper=None, # Assuming not used based on previous context
+            auth_helper=no_op_helper,               # <<< use NoOpAuthHelper()
             chatgpt_model=CONFIG.AZURE_OPENAI_CHATGPT_MODEL,
             chatgpt_deployment=CONFIG.AZURE_OPENAI_CHATGPT_DEPLOYMENT,
             embedding_model=CONFIG.AZURE_OPENAI_EMB_MODEL_NAME,
@@ -235,7 +244,7 @@ async def setup_azure_clients(app: web.Application):
             content_field=CONFIG.KB_FIELDS_CONTENT,
             query_language=CONFIG.AZURE_SEARCH_QUERY_LANGUAGE,
             query_speller=CONFIG.AZURE_SEARCH_QUERY_SPELLER,
-            prompt_manager=prompt_manager, # Pass the initialized manager
+            prompt_manager=prompt_manager,
         )
         AZURE_CLIENTS["rag_approach"] = rag_approach
         log_print("RAG Approach initialized successfully.")
