@@ -82,13 +82,12 @@ class RagBot(ActivityHandler):
         print(f"on_members_added_activity triggered for {len(members_added)} members.") # Add log
         for member in members_added:
             print(f"  Member ID: {member.id}, Recipient ID: {turn_context.activity.recipient.id}") # Add log
-            # Temporarily remove the condition for testing:
-            # if member.id != turn_context.activity.recipient.id:
-            await turn_context.send_activity(
-                MessageFactory.text(
-                    "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
+            if member.id != turn_context.activity.recipient.id:
+                await turn_context.send_activity(
+                    MessageFactory.text(
+                        "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
+                    )
                 )
-            )
 
     # --- THIS METHOD IS MODIFIED ---
     async def on_message_activity(self, turn_context: TurnContext):
@@ -146,8 +145,13 @@ class RagBot(ActivityHandler):
             await turn_context.send_activity(MessageFactory.text(answer))
 
             # 5. Update history
+            MAX_HISTORY_LENGTH = 10  # keep recent 10 interactions (5 rounds QA)
+
             if answer != "Sorry, I encountered an error while processing your request.":
                 updated_history = messages_for_rag + [{"role": "assistant", "content": answer}]
+                
+                updated_history = updated_history[-MAX_HISTORY_LENGTH:]
+
                 print(f"[on_message_activity] Updating conversation history (new length): {len(updated_history)})")
                 await self.conversation_history_accessor.set(turn_context, updated_history)
             else:
