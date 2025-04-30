@@ -23,7 +23,7 @@ class DefaultConfig:
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure") # "azure", "azure_custom", "openai", "local"
     AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # For OpenAI API
-    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT","gpt-35-turbo") # Deployment for chat model
+    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT","chatgpt35") # Deployment for chat model
     AZURE_OPENAI_CHATGPT_MODEL = os.environ.get("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
     AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT","my-ada-embedding") # Deployment for embedding model
     AZURE_OPENAI_EMB_MODEL_NAME = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
