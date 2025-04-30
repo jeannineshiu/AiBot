@@ -126,22 +126,28 @@ async def setup_azure_clients(app: web.Application):
             if not CONFIG.AZURE_OPENAI_SERVICE:
                 raise ValueError("AZURE_OPENAI_SERVICE must be set for Azure OpenAI")
             endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.cognitiveservices.azure.com"
-            log_print(f"Using Azure OpenAI via AsyncOpenAI. Endpoint: {endpoint}")
+            log_print(f"Using Azure OpenAI via AsyncAzureOpenAI. Endpoint: {endpoint}")
 
             api_key = CONFIG.AZURE_OPENAI_API_KEY_OVERRIDE or CONFIG.OPENAI_API_KEY
             if not api_key:
-                raise ValueError("Azure OpenAI requires an API key override or OPENAI_API_KEY.")
+                raise ValueError("Azure OpenAI requires AZURE_OPENAI_API_KEY_OVERRIDE or OPENAI_API_KEY.")
 
-            openai_client = AsyncOpenAI(
+            openai_client = AsyncAzureOpenAI(
+                api_version=CONFIG.AZURE_OPENAI_API_VERSION,
+                azure_endpoint=endpoint,
                 api_key=api_key,
-                base_url=endpoint,
             )
+
         elif CONFIG.OPENAI_HOST == "local":
             base_url = os.environ.get("OPENAI_BASE_URL")
             if not base_url:
                 raise ValueError("OPENAI_BASE_URL must be set for local OpenAI host")
             log_print(f"Using local OpenAI compatible host. Base URL: {base_url}")
-            openai_client = AsyncOpenAI(base_url=base_url, api_key=CONFIG.OPENAI_API_KEY)
+            openai_client = AsyncOpenAI(
+                base_url=base_url,
+                api_key=CONFIG.OPENAI_API_KEY,
+            )
+
         else:
             if not CONFIG.OPENAI_API_KEY:
                 raise ValueError("OPENAI_API_KEY must be set for non-Azure OpenAI")
@@ -150,6 +156,7 @@ async def setup_azure_clients(app: web.Application):
                 api_key=CONFIG.OPENAI_API_KEY,
                 organization=CONFIG.OPENAI_ORGANIZATION,
             )
+
         AZURE_CLIENTS["openai"] = openai_client
         log_print("OpenAI client initialized successfully.")
     except Exception as e:
