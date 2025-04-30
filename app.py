@@ -248,7 +248,6 @@ async def setup_azure_clients(app: web.Application):
             query_language=CONFIG.AZURE_SEARCH_QUERY_LANGUAGE,
             query_speller=CONFIG.AZURE_SEARCH_QUERY_SPELLER,
             prompt_manager=prompt_manager,
-            should_stream=True,
         )
         # Force‐inject the helper
         rag_approach.auth_helper = no_op_helper

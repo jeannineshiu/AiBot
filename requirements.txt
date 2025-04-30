@@ -15,6 +15,7 @@ azure-identity        # For authentication
 azure-search-documents # For Azure AI Search (use stable release)
 azure-storage-blob # For Blob Storage interaction
 openai      # For Azure OpenAI / OpenAI (v1.x required)
+azure-ai-openai>=1.1.0
 
 # RAG Utilities
 tiktoken            # For token counting
