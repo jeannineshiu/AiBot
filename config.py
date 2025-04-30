@@ -26,7 +26,7 @@ class DefaultConfig:
     # Optional: if you still use other OpenAI settings
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT", "my-ada-embedding")
+    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT", "my-embedding-ada")
     AZURE_OPENAI_EMB_MODEL_NAME = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
     AZURE_OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_OPENAI_EMB_DIMENSIONS") or 1536)
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-12-01-preview"
