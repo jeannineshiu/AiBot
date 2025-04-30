@@ -5,32 +5,33 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv() # Load environment variables from .env file
+# Load environment variables from .env file (optional, kept for other settings)
+load_dotenv()
 
 class DefaultConfig:
     """ Bot Configuration """
 
-    #PORT = 3978
+    # Server port
     PORT = int(os.environ.get("PORT", 8000))
     APP_TYPE = os.environ.get("MicrosoftAppType", "MultiTenant")
-    
-    APP_ID = os.environ.get("MicrosoftAppId", "") # Or fetch from secure config
-    APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "") # Or fetch from secure config
-    DIRECT_LINE_SECRET = os.environ.get("DirectLineSecret", "") # Or fetch from secure config
+    APP_ID = os.environ.get("MicrosoftAppId", "")
+    APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "")
+    DIRECT_LINE_SECRET = os.environ.get("DirectLineSecret", "")
 
+    # === Azure OpenAI (hardcoded) ===
+    AZURE_OPENAI_SERVICE = "16th--ma3vzbcm-eastus2"
+    AZURE_OPENAI_CHATGPT_DEPLOYMENT = "chatgpt4-formybot"
+    AZURE_OPENAI_CHATGPT_MODEL = "gpt-4"
 
-    # === Azure OpenAI ===
-    OPENAI_HOST = os.getenv("OPENAI_HOST", "azure") # "azure", "azure_custom", "openai", "local"
-    AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # For OpenAI API
-    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT","chatgpt4-formybot") # Deployment for chat model
-    AZURE_OPENAI_CHATGPT_MODEL = os.environ.get("AZURE_OPENAI_CHATGPT_MODEL", "gpt-4")
-    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT","my-ada-embedding") # Deployment for embedding model
+    # Optional: if you still use other OpenAI settings
+    OPENAI_HOST = os.getenv("OPENAI_HOST", "azure")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT", "my-ada-embedding")
     AZURE_OPENAI_EMB_MODEL_NAME = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
     AZURE_OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_OPENAI_EMB_DIMENSIONS") or 1536)
-    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-02-01" # Use a recent, appropriate version
-    AZURE_OPENAI_API_KEY_OVERRIDE = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE") # Optional: Use if not using Azure credential
-    AZURE_OPENAI_CUSTOM_URL = os.getenv("AZURE_OPENAI_CUSTOM_URL") # Required if OPENAI_HOST="azure_custom"
+    AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01")
+    AZURE_OPENAI_API_KEY_OVERRIDE = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE")
+    AZURE_OPENAI_CUSTOM_URL = os.getenv("AZURE_OPENAI_CUSTOM_URL")
 
     # === Azure AI Search ===
     AZURE_SEARCH_SERVICE = os.getenv("AZURE_SEARCH_SERVICE", "")
@@ -46,4 +47,4 @@ class DefaultConfig:
 
     # === Azure Identity (for passwordless access) ===
     AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID")
-    AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID") # Optional: For user-assigned managed identity
+    AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")  # Optional: For user-assigned managed identity
