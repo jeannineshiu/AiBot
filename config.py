@@ -18,10 +18,6 @@ class DefaultConfig:
     APP_PASSWORD = os.environ.get("MicrosoftAppPassword", "") # Or fetch from secure config
     DIRECT_LINE_SECRET = os.environ.get("DirectLineSecret", "") # Or fetch from secure config
 
-    AZURE_SEARCH_SERVICE = os.getenv("AZURE_SEARCH_SERVICE", "")
-    AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX", "")
-    AZURE_STORAGE_ACCOUNT = os.getenv("AZURE_STORAGE_ACCOUNT", "")
-    AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "")
 
     # === Azure OpenAI ===
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure") # "azure", "azure_custom", "openai", "local"
