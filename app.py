@@ -34,9 +34,11 @@ from botbuilder.schema import Activity, ActivityTypes
 from azure.identity.aio import ( # Added
     AzureDeveloperCliCredential,
     ManagedIdentityCredential,
-    DefaultAzureCredential, # Use DefaultAzureCredential for flexibility
-    get_bearer_token_provider,
+    DefaultAzureCredential,
 )
+# In recent SDKs, the token provider helper lives under azure.ai.openai:
+from azure.ai.openai.aio import get_bearer_token_provider
+
 from azure.identity import CredentialUnavailableError
 from azure.search.documents.aio import SearchClient                 # Added
 from azure.storage.blob.aio import ContainerClient                 # Added
@@ -123,7 +125,8 @@ async def setup_azure_clients(app: web.Application):
         if CONFIG.OPENAI_HOST.startswith("azure"):
             if not CONFIG.AZURE_OPENAI_SERVICE:
                  raise ValueError("AZURE_OPENAI_SERVICE must be set for Azure OpenAI")
-            endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.openai.azure.com"
+            #endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.openai.azure.com"
+            endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.cognitiveservices.azure.com"
             log_print(f"Using Azure OpenAI. Endpoint: {endpoint}")
 
             if CONFIG.AZURE_OPENAI_API_KEY_OVERRIDE:
@@ -245,6 +248,7 @@ async def setup_azure_clients(app: web.Application):
             query_language=CONFIG.AZURE_SEARCH_QUERY_LANGUAGE,
             query_speller=CONFIG.AZURE_SEARCH_QUERY_SPELLER,
             prompt_manager=prompt_manager,
+            should_stream=True,
         )
         # Force‐inject the helper
         rag_approach.auth_helper = no_op_helper
