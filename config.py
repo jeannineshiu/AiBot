@@ -27,9 +27,9 @@ class DefaultConfig:
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure") # "azure", "azure_custom", "openai", "local"
     AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # For OpenAI API
-    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT") # Deployment for chat model
+    AZURE_OPENAI_CHATGPT_DEPLOYMENT = os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT","gpt-35-turbo") # Deployment for chat model
     AZURE_OPENAI_CHATGPT_MODEL = os.environ.get("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
-    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT") # Deployment for embedding model
+    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT","my-ada-embedding") # Deployment for embedding model
     AZURE_OPENAI_EMB_MODEL_NAME = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
     AZURE_OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_OPENAI_EMB_DIMENSIONS") or 1536)
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-02-01" # Use a recent, appropriate version
