@@ -37,7 +37,7 @@ from azure.identity.aio import ( # Added
     DefaultAzureCredential,
 )
 # In recent SDKs, the token provider helper lives under azure.ai.openai:
-from azure.ai.openai.aio import get_bearer_token_provider
+# from azure.ai.openai.aio import get_bearer_token_provider
 
 from azure.identity import CredentialUnavailableError
 from azure.search.documents.aio import SearchClient                 # Added
@@ -124,45 +124,32 @@ async def setup_azure_clients(app: web.Application):
     try:
         if CONFIG.OPENAI_HOST.startswith("azure"):
             if not CONFIG.AZURE_OPENAI_SERVICE:
-                 raise ValueError("AZURE_OPENAI_SERVICE must be set for Azure OpenAI")
-            #endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.openai.azure.com"
+                raise ValueError("AZURE_OPENAI_SERVICE must be set for Azure OpenAI")
             endpoint = f"https://{CONFIG.AZURE_OPENAI_SERVICE}.cognitiveservices.azure.com"
-            log_print(f"Using Azure OpenAI. Endpoint: {endpoint}")
+            log_print(f"Using Azure OpenAI via AsyncOpenAI. Endpoint: {endpoint}")
 
-            if CONFIG.AZURE_OPENAI_API_KEY_OVERRIDE:
-                log_print("Using Azure OpenAI API Key override.")
-                openai_client = AsyncAzureOpenAI(
-                    api_version=CONFIG.AZURE_OPENAI_API_VERSION,
-                    azure_endpoint=endpoint,
-                    api_key=CONFIG.AZURE_OPENAI_API_KEY_OVERRIDE,
-                )
-            elif azure_credential:
-                log_print("Using Azure credential (token provider) for Azure OpenAI.")
-                token_provider = get_bearer_token_provider(azure_credential, "https://cognitiveservices.azure.com/.default")
-                openai_client = AsyncAzureOpenAI(
-                    api_version=CONFIG.AZURE_OPENAI_API_VERSION,
-                    azure_endpoint=endpoint,
-                    azure_ad_token_provider=token_provider,
-                )
-            else:
-                 # Should have been caught earlier, but double-check
-                 raise ValueError("Azure OpenAI requires either an API Key override or a working Azure credential.")
+            api_key = CONFIG.AZURE_OPENAI_API_KEY_OVERRIDE or CONFIG.OPENAI_API_KEY
+            if not api_key:
+                raise ValueError("Azure OpenAI requires an API key override or OPENAI_API_KEY.")
 
+            openai_client = AsyncOpenAI(
+                api_key=api_key,
+                base_url=endpoint,
+            )
         elif CONFIG.OPENAI_HOST == "local":
-             # Example for local OpenAI-compatible endpoint
-             base_url = os.environ.get("OPENAI_BASE_URL")
-             if not base_url:
-                  raise ValueError("OPENAI_BASE_URL must be set for local OpenAI host")
-             log_print(f"Using local OpenAI compatible host. Base URL: {base_url}")
-             openai_client = AsyncOpenAI(base_url=base_url, api_key="no-key-required") # Often local models don't need a key
-        else: # Assume standard OpenAI API
-             if not CONFIG.OPENAI_API_KEY:
-                  raise ValueError("OPENAI_API_KEY must be set for non-Azure OpenAI")
-             log_print("Using standard OpenAI client.")
-             openai_client = AsyncOpenAI(
+            base_url = os.environ.get("OPENAI_BASE_URL")
+            if not base_url:
+                raise ValueError("OPENAI_BASE_URL must be set for local OpenAI host")
+            log_print(f"Using local OpenAI compatible host. Base URL: {base_url}")
+            openai_client = AsyncOpenAI(base_url=base_url, api_key=CONFIG.OPENAI_API_KEY)
+        else:
+            if not CONFIG.OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY must be set for non-Azure OpenAI")
+            log_print("Using standard OpenAI client.")
+            openai_client = AsyncOpenAI(
                 api_key=CONFIG.OPENAI_API_KEY,
-                organization=CONFIG.OPENAI_ORGANIZATION,  # Ensure this is valid or remove if unnecessary
-             )
+                organization=CONFIG.OPENAI_ORGANIZATION,
+            )
         AZURE_CLIENTS["openai"] = openai_client
         log_print("OpenAI client initialized successfully.")
     except Exception as e:

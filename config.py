@@ -32,6 +32,7 @@ class DefaultConfig:
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-12-01-preview"
     AZURE_OPENAI_API_KEY_OVERRIDE = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE")
     AZURE_OPENAI_CUSTOM_URL = os.getenv("AZURE_OPENAI_CUSTOM_URL")
+    OPENAI_ORGANIZATION = os.getenv("OPENAI_ORGANIZATION", "")  # Add this line
 
     # === Azure AI Search ===
     AZURE_SEARCH_SERVICE = os.getenv("AZURE_SEARCH_SERVICE", "")
