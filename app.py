@@ -13,7 +13,6 @@ import time # Import time for simple timing
 from aiohttp import web, ClientSession
 from aiohttp.web import Request, Response, json_response
 from aiohttp_cors import setup as setup_cors, ResourceOptions
-from aiohttp import web
 
 # --- BotBuilder Imports ---
 from botbuilder.core import (
@@ -167,15 +166,32 @@ async def setup_azure_clients(app: web.Application):
     # 3. Azure AI Search Client
     log_print("Initializing Azure AI Search client...")
     try:
+        from azure.core.credentials import AzureKeyCredential
+
         search_endpoint = f"https://{CONFIG.AZURE_SEARCH_SERVICE}.search.windows.net"
         log_print(f"Using Search endpoint: {search_endpoint}, Index: {CONFIG.AZURE_SEARCH_INDEX}")
-        # Use credential if available, otherwise SDK might look for AZURE_SEARCH_KEY env var
+
+        # First try token credential; if the search call fails (403), use API-key fallback
+        # The SDK will not auto–fallback, so we decide here:
+        search_key = os.getenv("AZURE_SEARCH_KEY") or CONFIG.AZURE_SEARCH_KEY
+        if azure_credential:
+            credential = azure_credential
+            log_print("Using DefaultAzureCredential for SearchClient.")
+        elif search_key:
+            credential = AzureKeyCredential(search_key)
+            log_print("Using AzureKeyCredential (AZURE_SEARCH_KEY) for SearchClient.")
+        else:
+            raise ValueError(
+                "No credentials found for Azure Search. "
+                "Set AZURE_SEARCH_KEY or grant your identity access."
+            )
+
         search_client = SearchClient(
             endpoint=search_endpoint,
             index_name=CONFIG.AZURE_SEARCH_INDEX,
-            credential=azure_credential if azure_credential else None, # SDK handles key lookup if credential is None
-            credential_scopes=["https://search.azure.com/.default"] if azure_credential else None
+            credential=credential,
         )
+        # Optionally add a quick test call if needed, but can slow startup
         # Optionally add a quick test call if needed, but can slow startup
         # await search_client.get_document_count()
         AZURE_CLIENTS["search"] = search_client
