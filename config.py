@@ -41,7 +41,7 @@ class DefaultConfig:
     AZURE_SEARCH_QUERY_SPELLER = os.getenv("AZURE_SEARCH_QUERY_SPELLER", "lexicon")
     KB_FIELDS_CONTENT = os.getenv("KB_FIELDS_CONTENT", "content")
     KB_FIELDS_SOURCEPAGE = os.getenv("KB_FIELDS_SOURCEPAGE", "sourcepage")
-    AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY","Sl6MBlh5ZG7QhJbhvqOksTr3qtmgyYZzwX562wurJLAzSeA7CZm2")
+    AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY")
 
     # === Azure Storage ===
     AZURE_STORAGE_ACCOUNT = os.getenv("AZURE_STORAGE_ACCOUNT", "")
