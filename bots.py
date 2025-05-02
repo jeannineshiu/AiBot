@@ -157,7 +157,7 @@ class RagBot(ActivityHandler):
 
             await turn_context.send_activity(
                 MessageFactory.text(
-                    f"⚠️ The service returned **{status_code} Forbidden**.\n"
+                    f"The service returned **{status_code} Forbidden**.\n"
                     f"Request ID: `{request_id}`\n"
                     "Please verify credentials, RBAC or network settings and try again."
                 )
@@ -187,7 +187,7 @@ class RagBot(ActivityHandler):
             if links:
                 await turn_context.send_activity(
                     MessageFactory.text(
-                        "🔗 Source links:\n" + "\n".join(f"- {u}" for u in links)
+                        "Source links:\n" + "\n".join(f"- {u}" for u in links)
                     )
                 )
 
