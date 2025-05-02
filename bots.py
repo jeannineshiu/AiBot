@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict, Any
 import traceback
+import logging
 
 # --- BotBuilder Imports ---
 from botbuilder.core import (
@@ -13,22 +14,24 @@ from botbuilder.core import (
 from botbuilder.schema import ActivityTypes, ChannelAccount
 from botbuilder.schema import Activity
 
+# --- Azure SDK Imports (for richer error handling) ---
+from azure.core.exceptions import HttpResponseError
+
 # --- RAG Imports ---
 # Import the specific approach class you are using
 try:
     from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 except ModuleNotFoundError:
     print("ERROR: Make sure the 'approaches' module is accessible.")
+
     class ChatReadRetrieveReadApproach:
         async def run_until_final_call(
             self,
             messages: List[Dict[str, str]],
             overrides: Dict[str, Any],
             auth_claims: Dict[str, Any],
-            should_stream: bool = False
+            should_stream: bool = False,
         ):
-            from typing import Coroutine
-
             async def dummy_coroutine():
                 class DummyChoice:
                     class DummyMessage:
@@ -47,33 +50,34 @@ except ModuleNotFoundError:
             return (DummyExtraInfo(), dummy_coroutine())
 
 
+# Configure a simple logger for easier debugging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("RagBot")
+
+
 class RagBot(ActivityHandler):
-    """
-    Bot that integrates with a RAG (Retrieval-Augmented Generation) approach.
-    """
+    """Bot that integrates with a RAG (Retrieval-Augmented Generation) approach."""
+
     def __init__(
         self,
         conversation_state: ConversationState,
         user_state: UserState,  # Optional, but recommended
-        rag_approach: ChatReadRetrieveReadApproach
+        rag_approach: ChatReadRetrieveReadApproach,
     ):
         if conversation_state is None:
-            raise TypeError(
-                "[RagBot]: conversation_state is required but None was given."
-            )
+            raise TypeError("[RagBot]: conversation_state is required but None was given.")
         if rag_approach is None:
-            raise TypeError(
-                "[RagBot]: rag_approach is required but None was given."
-            )
+            raise TypeError("[RagBot]: rag_approach is required but None was given.")
 
         self.conversation_state = conversation_state
         self.user_state = user_state
         self.rag_approach = rag_approach
 
         # Create state property accessor for conversation history
-        self.conversation_history_accessor = \
-            self.conversation_state.create_property("ConversationHistory")
-        print("[RagBot] Initialized with ConversationState and RAG approach.")
+        self.conversation_history_accessor = self.conversation_state.create_property(
+            "ConversationHistory"
+        )
+        logger.info("[RagBot] Initialized with ConversationState and RAG approach.")
 
     async def on_turn(self, turn_context: TurnContext):
         await super().on_turn(turn_context)
@@ -82,9 +86,7 @@ class RagBot(ActivityHandler):
             await self.user_state.save_changes(turn_context, False)
 
     async def on_members_added_activity(
-        self,
-        members_added: List[ChannelAccount],
-        turn_context: TurnContext
+        self, members_added: List[ChannelAccount], turn_context: TurnContext
     ):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
@@ -95,15 +97,10 @@ class RagBot(ActivityHandler):
                 )
 
     async def on_message_activity(self, turn_context: TurnContext):
-        if (
-            turn_context.activity.type == ActivityTypes.message
-            and turn_context.activity.text
-        ):
+        if turn_context.activity.type == ActivityTypes.message and turn_context.activity.text:
             user_message = turn_context.activity.text
             # Proper typing indicator
-            await turn_context.send_activity(
-                Activity(type=ActivityTypes.typing)
-            )
+            await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
             # Load conversation history
             conversation_history = await self.conversation_history_accessor.get(
@@ -119,7 +116,7 @@ class RagBot(ActivityHandler):
             full_response = ""
             error_occurred = False
             extra_info = None
-            error_text = "Sorry, I couldn't process your request. Please try again."
+            generic_error_text = "Sorry, I couldn't process your request. Please try again later."
 
             try:
                 extra_info, stream = await self.rag_approach.run_until_final_call(
@@ -128,21 +125,51 @@ class RagBot(ActivityHandler):
                     auth_claims={},
                     should_stream=True,
                 )
+
                 # Stream response chunks
                 async for update in stream:
                     chunk = update.choices[0].delta.content or ""
                     if chunk:
                         full_response += chunk
-                        await turn_context.send_activity(
-                            MessageFactory.text(chunk)
-                        )
-                print(f"[on_message_activity] Final answer length: {len(full_response)}")
-            except Exception:
+                        await turn_context.send_activity(MessageFactory.text(chunk))
+
+                logger.info("[on_message_activity] Final answer length: %s", len(full_response))
+
+            except HttpResponseError as http_err:
+                # Specific handling for Azure SDK errors (e.g., 'Forbidden')
+                error_occurred = True
+                # Extract useful diagnostic information
+                status_code = (
+                    http_err.status_code
+                    if hasattr(http_err, "status_code") and http_err.status_code is not None
+                    else (http_err.response.status_code if http_err.response else "Unknown")
+                )
+                request_id = (
+                    http_err.response.headers.get("x-ms-request-id")
+                    if http_err.response and http_err.response.headers
+                    else "N/A"
+                )
+                logger.error(
+                    "HttpResponseError caught | status=%s, message=%s, request_id=%s",
+                    status_code,
+                    str(http_err),
+                    request_id,
+                )
+
+                # Tell the user (without leaking sensitive info)
+                await turn_context.send_activity(
+                    MessageFactory.text(
+                        f"⚠️ The service returned **{status_code} Forbidden**. "
+                        "Please check your credentials/roles and try again. "
+                        f"(request-id: {request_id})"
+                    )
+                )
+
+            except Exception as ex:  # Generic fallback
                 error_occurred = True
                 traceback.print_exc()
-                await turn_context.send_activity(
-                    MessageFactory.text(error_text)
-                )
+                logger.exception("Unexpected error: %s", ex)
+                await turn_context.send_activity(MessageFactory.text(generic_error_text))
 
             # Fallback if stream was empty
             if not error_occurred and not full_response:
@@ -156,7 +183,7 @@ class RagBot(ActivityHandler):
             if extra_info and getattr(extra_info, "source_documents", None):
                 links = []
                 for doc in extra_info.source_documents:
-                    url = getattr(doc, 'metadata', {}).get('source')
+                    url = getattr(doc, "metadata", {}).get("source")
                     if url and url not in links:
                         links.append(url)
                 if links:
@@ -167,10 +194,11 @@ class RagBot(ActivityHandler):
 
             # Update history on success
             if not error_occurred and full_response:
-                new_history = messages_for_rag + [{"role": "assistant", "content": full_response}]
-                await self.conversation_history_accessor.set(
-                    turn_context, new_history[-10:]
-                )
+                new_history = messages_for_rag + [
+                    {"role": "assistant", "content": full_response}
+                ]
+                # Keep only the last 10 turns to limit token usage
+                await self.conversation_history_accessor.set(turn_context, new_history[-10:])
         else:
             await turn_context.send_activity(
                 MessageFactory.text(
