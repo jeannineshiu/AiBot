@@ -85,7 +85,7 @@ class RagBot(ActivityHandler):
             if member.id != turn_context.activity.recipient.id:
                 await turn_context.send_activity(
                     MessageFactory.text(
-                        "Welcome! I'm a RAG bot. Ask me questions based on the indexed documents."
+                        "Welcome! I'm a parenting bot. Ask me a question."
                     )
                 )
 
