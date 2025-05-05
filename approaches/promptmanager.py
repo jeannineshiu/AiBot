@@ -1,6 +1,8 @@
 import json
 import pathlib
 import re
+import tempfile
+import os
 
 import prompty
 from openai.types.chat import ChatCompletionMessageParam
@@ -26,9 +28,19 @@ class PromptyManager(PromptManager):
         raw = (self.PROMPTS_DIRECTORY / path).read_text(encoding="utf-8")
         # 2. Remove all local filesystem image references using a regex
         cleaned = re.sub(r'!\[.*?\]\(/fileadmin/[^\)]+\)', '', raw)
-        # 3. Pass the cleaned string to prompty
-        #    Assuming prompty supports loading from a string, typically called load_string or loads
-        return prompty.load_string(cleaned)
+        # 3. Write the cleaned content to a temporary file for Prompty to load
+        with tempfile.NamedTemporaryFile(mode="w", suffix=path, delete=False, encoding="utf-8") as tmp_file:
+            tmp_file.write(cleaned)
+            temp_path = tmp_file.name
+
+        try:
+            # Load the prompt asset from the temporary file
+            prompt_asset = prompty.load(temp_path)
+        finally:
+            # Clean up the temporary file
+            os.remove(temp_path)
+
+        return prompt_asset
 
     def load_tools(self, path: str):
         # Load tool definitions from a JSON file
