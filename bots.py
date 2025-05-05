@@ -3,7 +3,6 @@ from typing import List, Dict, Any
 import traceback
 import logging
 import asyncio
-from openai.error import RateLimitError  # imported for catching 429s
 
 # --- BotBuilder Imports ---
 from botbuilder.core import (
@@ -43,7 +42,7 @@ logger = logging.getLogger("RagBot")
 
 
 class RagBot(ActivityHandler):
-    """Bot that integrates with a RAG (Retrieval‑Augmented Generation) approach."""
+    """Bot that integrates with a RAG (Retrieval-Augmented Generation) approach."""
 
     def __init__(
         self,
@@ -63,7 +62,7 @@ class RagBot(ActivityHandler):
             "ConversationHistory"
         )
 
-        # Rate‐limit controls
+        # Rate-limit controls
         self._openai_semaphore = asyncio.Semaphore(1)  # serialize OAI calls
         self._max_retries = 3                          # retry attempts on 429
         self._base_retry_delay = 60                    # fallback Retry-After in seconds
@@ -113,7 +112,7 @@ class RagBot(ActivityHandler):
         error_occurred = False
         generic_error_text = "Sorry, I couldn't process your request right now."
 
-        # --- Wrapped Azure OpenAI call with semaphore + retry/back‑off ---
+        # --- Wrapped Azure OpenAI call with semaphore + retry/back-off ---
         async with self._openai_semaphore:
             for attempt in range(1, self._max_retries + 1):
                 try:
@@ -124,32 +123,38 @@ class RagBot(ActivityHandler):
                         should_stream=True,
                     )
                     break  # success
-                except RateLimitError as e:
-                    # parse Retry-After header if present
-                    retry_after = self._base_retry_delay
-                    hdrs = getattr(e, "headers", {}) or {}
-                    if "Retry-After" in hdrs:
-                        try:
-                            retry_after = int(hdrs["Retry-After"])
-                        except ValueError:
-                            pass
 
-                    if attempt < self._max_retries:
-                        logger.warning(
-                            "Rate limit hit (attempt %s/%s). Sleeping %ss...",
-                            attempt, self._max_retries, retry_after
-                        )
-                        await asyncio.sleep(retry_after)
-                        continue
-                    else:
-                        # final failure
-                        logger.error("Exceeded max retries for rate limit.")
-                        await turn_context.send_activity(
-                            MessageFactory.text(
-                                "I'm still overloaded by too many requests. Please try again in a minute."
+                except HttpResponseError as e:
+                    # If it's a rate-limit (429), back off and retry
+                    status = getattr(e, "status_code", None) or (
+                        e.response.status_code if e.response else None
+                    )
+                    if status == 429:
+                        retry_after = self._base_retry_delay
+                        hdrs = getattr(e, "response", None) and e.response.headers or {}
+                        if "Retry-After" in hdrs:
+                            try:
+                                retry_after = int(hdrs["Retry-After"])
+                            except ValueError:
+                                pass
+
+                        if attempt < self._max_retries:
+                            logger.warning(
+                                "Rate limit hit (attempt %s/%s). Sleeping %ss...",
+                                attempt, self._max_retries, retry_after
                             )
-                        )
-                        return
+                            await asyncio.sleep(retry_after)
+                            continue
+                        else:
+                            logger.error("Exceeded max retries for rate limit.")
+                            await turn_context.send_activity(
+                                MessageFactory.text(
+                                    "I'm still overloaded by too many requests. Please try again in a minute."
+                                )
+                            )
+                            return
+                    # Non-429 HttpResponseError: re-raise to be caught below
+                    raise
 
         # If we have a valid stream_coro, proceed to stream the response
         try:
@@ -192,7 +197,7 @@ class RagBot(ActivityHandler):
             await turn_context.send_activity(
                 MessageFactory.text(
                     f"The service returned **{status_code} Forbidden**.\n"
-                    f"Request ID: `{request_id}`\n"
+                    f"Request ID: `{request_id}`\n"
                     "Please verify credentials, RBAC or network settings and try again."
                 )
             )
