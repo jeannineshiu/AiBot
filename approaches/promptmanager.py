@@ -5,6 +5,9 @@ import tempfile
 import shutil
 
 import prompty
+# Monkey-patch to disable inline image loading (avoid FileNotFoundError on local paths)
+import prompty.parsers
+prompty.parsers.Parser.inline_image = lambda self, image_path: {"url": ""}
 from openai.types.chat import ChatCompletionMessageParam
 
 
