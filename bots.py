@@ -90,7 +90,10 @@ class RagBot(ActivityHandler):
                 )
 
     async def on_message_activity(self, turn_context: TurnContext):
-        if turn_context.activity.type != ActivityTypes.message or not turn_context.activity.text:
+        if (
+            turn_context.activity.type != ActivityTypes.message
+            or not turn_context.activity.text
+        ):
             await turn_context.send_activity(
                 MessageFactory.text(
                     f"Unhandled activity type: {turn_context.activity.type}"
@@ -101,7 +104,9 @@ class RagBot(ActivityHandler):
         user_message = turn_context.activity.text
         await turn_context.send_activity(Activity(type=ActivityTypes.typing))
 
-        history = await self.conversation_history_accessor.get(turn_context, lambda: [])
+        history = await self.conversation_history_accessor.get(
+            turn_context, lambda: []
+        )
         messages_for_rag = history + [{"role": "user", "content": user_message}]
 
         full_response = ""
@@ -110,17 +115,21 @@ class RagBot(ActivityHandler):
         generic_error_text = "Sorry, I couldn't process your request right now."
 
         try:
-            extra_info, stream = await self.rag_approach.run_until_final_call(
+            extra_info, stream_coro = await self.rag_approach.run_until_final_call(
                 messages_for_rag,
                 overrides={},
                 auth_claims={},
                 should_stream=True,
             )
+            # Await the returned coroutine to get the async iterable
+            stream = await stream_coro
             async for update in stream:
                 chunk = update.choices[0].delta.content or ""
                 if chunk:
                     full_response += chunk
-                    await turn_context.send_activity(MessageFactory.text(chunk))
+                    await turn_context.send_activity(
+                        MessageFactory.text(chunk)
+                    )
             logger.info("[RagBot] Answer length: %s", len(full_response))
 
         # ---------- enhanced Azure SDK error capture ----------
@@ -130,14 +139,11 @@ class RagBot(ActivityHandler):
             # Dump headers (if any) for diagnosis
             hdrs: Dict[str, str] = {}
             if getattr(http_err, "response", None) and http_err.response.headers:
-                # Preserve original header names for reference
                 hdrs = dict(http_err.response.headers)
             logger.error("Headers returned on error: %s", hdrs)
 
-            # Keep traceback in platform log stream
             traceback.print_exc()
 
-            # Extract status + request‑id variants, case‑insensitive search
             status_code = getattr(http_err, "status_code", None) or (
                 http_err.response.status_code if http_err.response else "Unknown"
             )
@@ -167,7 +173,9 @@ class RagBot(ActivityHandler):
             error_occurred = True
             traceback.print_exc()
             logger.exception("Unexpected error: %s", ex)
-            await turn_context.send_activity(MessageFactory.text(generic_error_text))
+            await turn_context.send_activity(
+                MessageFactory.text(generic_error_text)
+            )
 
         # fallback if nothing streamed
         if not error_occurred and not full_response:
@@ -178,7 +186,9 @@ class RagBot(ActivityHandler):
             )
 
         # show source links
-        if extra_info and getattr(extra_info, "source_documents", None):
+        if extra_info and getattr(
+            extra_info, "source_documents", None
+        ):
             links = []
             for doc in extra_info.source_documents:
                 url = getattr(doc, "metadata", {}).get("source")
@@ -194,4 +204,6 @@ class RagBot(ActivityHandler):
         # store history
         if not error_occurred and full_response:
             history.append({"role": "assistant", "content": full_response})
-            await self.conversation_history_accessor.set(turn_context, history[-10:])
+            await self.conversation_history_accessor.set(
+                turn_context, history[-10:]
+            )
