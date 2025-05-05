@@ -174,12 +174,12 @@ async def setup_azure_clients(app: web.Application):
         # First try token credential; if the search call fails (403), use API-key fallback
         # The SDK will not auto–fallback, so we decide here:
         search_key = os.getenv("AZURE_SEARCH_KEY") or CONFIG.AZURE_SEARCH_KEY
-        if azure_credential:
-            credential = azure_credential
-            log_print("Using DefaultAzureCredential for SearchClient.")
-        elif search_key:
+        if search_key:
             credential = AzureKeyCredential(search_key)
             log_print("Using AzureKeyCredential (AZURE_SEARCH_KEY) for SearchClient.")
+        elif azure_credential:
+            credential = azure_credential
+            log_print("Using DefaultAzureCredential for SearchClient.")
         else:
             raise ValueError(
                 "No credentials found for Azure Search. "
