@@ -2,6 +2,8 @@ import json
 from typing import List, Dict, Any
 import traceback
 import logging
+import asyncio
+from openai.error import RateLimitError  # imported for catching 429s
 
 # --- BotBuilder Imports ---
 from botbuilder.core import (
@@ -21,15 +23,8 @@ try:
     from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 except ModuleNotFoundError:
     print("ERROR: Make sure the 'approaches' module is accessible.")
-
     class ChatReadRetrieveReadApproach:
-        async def run_until_final_call(
-            self,
-            messages: List[Dict[str, str]],
-            overrides: Dict[str, Any],
-            auth_claims: Dict[str, Any],
-            should_stream: bool = False,
-        ):
+        async def run_until_final_call(self, messages, overrides, auth_claims, should_stream=False):
             async def dummy_coroutine():
                 class DummyChoice:
                     class DummyMessage:
@@ -38,10 +33,8 @@ except ModuleNotFoundError:
                 class DummyCompletion:
                     choices = [DummyChoice()]
                 return DummyCompletion()
-
             class DummyExtraInfo:
                 source_documents = []
-
             return DummyExtraInfo(), dummy_coroutine()
 
 # --------------------- logging setup ---------------------
@@ -69,6 +62,12 @@ class RagBot(ActivityHandler):
         self.conversation_history_accessor = conversation_state.create_property(
             "ConversationHistory"
         )
+
+        # Rate‐limit controls
+        self._openai_semaphore = asyncio.Semaphore(1)  # serialize OAI calls
+        self._max_retries = 3                          # retry attempts on 429
+        self._base_retry_delay = 60                    # fallback Retry-After in seconds
+
         logger.info("[RagBot] Initialised.")
 
     # ------------------------------------------------------
@@ -114,14 +113,46 @@ class RagBot(ActivityHandler):
         error_occurred = False
         generic_error_text = "Sorry, I couldn't process your request right now."
 
+        # --- Wrapped Azure OpenAI call with semaphore + retry/back‑off ---
+        async with self._openai_semaphore:
+            for attempt in range(1, self._max_retries + 1):
+                try:
+                    extra_info, stream_coro = await self.rag_approach.run_until_final_call(
+                        messages_for_rag,
+                        overrides={},
+                        auth_claims={},
+                        should_stream=True,
+                    )
+                    break  # success
+                except RateLimitError as e:
+                    # parse Retry-After header if present
+                    retry_after = self._base_retry_delay
+                    hdrs = getattr(e, "headers", {}) or {}
+                    if "Retry-After" in hdrs:
+                        try:
+                            retry_after = int(hdrs["Retry-After"])
+                        except ValueError:
+                            pass
+
+                    if attempt < self._max_retries:
+                        logger.warning(
+                            "Rate limit hit (attempt %s/%s). Sleeping %ss...",
+                            attempt, self._max_retries, retry_after
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    else:
+                        # final failure
+                        logger.error("Exceeded max retries for rate limit.")
+                        await turn_context.send_activity(
+                            MessageFactory.text(
+                                "I'm still overloaded by too many requests. Please try again in a minute."
+                            )
+                        )
+                        return
+
+        # If we have a valid stream_coro, proceed to stream the response
         try:
-            extra_info, stream_coro = await self.rag_approach.run_until_final_call(
-                messages_for_rag,
-                overrides={},
-                auth_claims={},
-                should_stream=True,
-            )
-            # Await the returned coroutine to get the async iterable
             stream = await stream_coro
             async for update in stream:
                 chunk = update.choices[0].delta.content or ""
@@ -132,16 +163,13 @@ class RagBot(ActivityHandler):
                     )
             logger.info("[RagBot] Answer length: %s", len(full_response))
 
-        # ---------- enhanced Azure SDK error capture ----------
+        # ---------- existing Azure SDK error capture ----------
         except HttpResponseError as http_err:
             error_occurred = True
-
-            # Dump headers (if any) for diagnosis
             hdrs: Dict[str, str] = {}
             if getattr(http_err, "response", None) and http_err.response.headers:
                 hdrs = dict(http_err.response.headers)
             logger.error("Headers returned on error: %s", hdrs)
-
             traceback.print_exc()
 
             status_code = getattr(http_err, "status_code", None) or (
@@ -186,9 +214,7 @@ class RagBot(ActivityHandler):
             )
 
         # show source links
-        if extra_info and getattr(
-            extra_info, "source_documents", None
-        ):
+        if extra_info and getattr(extra_info, "source_documents", None):
             links = []
             for doc in extra_info.source_documents:
                 url = getattr(doc, "metadata", {}).get("source")
