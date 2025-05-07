@@ -34,3 +34,4 @@ python-dotenv
 prompty==0.1.50
 rich
 typing-extensions
+PyYAML
