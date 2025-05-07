@@ -32,6 +32,12 @@ This section outlines the iterative approach taken to build the chatbot.
 * **Objective:** To understand the fundamentals of the Microsoft Azure Bot Framework and establish a basic deployment pipeline.
 * **Implementation:** A simple echo bot was developed and successfully deployed on Azure.
 * **Learnings:** Gained familiarity with Azure Bot Service and the initial steps for bot deployment.
+* **Relevant Azure Documentation:**
+   * [Provision and publish a bot](https://learn.microsoft.com/en-us/azure/bot-service/provision-and-publish-a-bot?view=azure-bot-service-4.0&tabs=userassigned%2Ccsharp)
+   * [Provision an App Service](https://learn.microsoft.com/en-us/azure/bot-service/provision-app-service?view=azure-bot-service-4.0&tabs=userassigned%2Cexistingplan)
+   * [Provision an Azure Bot resource](https://learn.microsoft.com/en-us/azure/bot-service/provision-azure-bot?view=azure-bot-service-4.0&tabs=userassigned)
+   * [Set up continuous deployment](https://learn.microsoft.com/en-us/azure/bot-service/bot-service-build-continuous-deployment?view=azure-bot-service-4.0)
+   * [Bot Framework REST API - Authentication](https://learn.microsoft.com/en-us/azure/bot-service/rest-api/bot-framework-rest-direct-line-3-0-authentication?view=azure-bot-service-4.0)
 
 ### Attempt 2: Building the Knowledge Base - Embeddings for RAG
 
