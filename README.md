@@ -58,7 +58,9 @@ This section outlines the iterative approach taken to build the chatbot.
         * `approaches/` (different RAG strategies and interaction logic)
     * Azure AI Search was used to query the previously created index.
     * Azure AI Services provided access to the `gpt-4` model for generating responses based on retrieved context and the `text-embedding-ada-002` model for processing user queries if needed.
-* **Challenge Encountered:** Faced OpenAI rate limit issues. An increase in quota is required to fully test and operate the RAG-powered bot at scale. This involves submitting a request to Azure.
+* **Challenge Encountered:** Faced OpenAI rate limit issues. An increase in quota is required to fully test and operate the RAG-powered bot at scale. This involves submitting a [request](https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR4xPXO648sJKt4GoXAed-0pUMFE1Rk9CU084RjA0TUlVSUlMWEQzVkJDNCQlQCN0PWcu) to Azure.
+![Pasted Graphic 11](https://github.com/user-attachments/assets/d15a319f-ffe1-47b1-bd22-8304dc5d9b17)
+
 
 ## Technologies Used
 
