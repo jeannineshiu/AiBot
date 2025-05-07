@@ -37,7 +37,7 @@ This section outlines the iterative approach taken to build the chatbot.
 
 * **Objective:** To process and prepare ElternLeben.de's content for a Retrieval Augmented Generation (RAG) system. This involved creating a searchable index of embeddings.
 * **Implementation:**
-    * Leveraged code from the [Azure Search OpenAI Demo](https://github.com/Azure-Samples/azure-search-openai-demo), specifically the `predocs.py` script and its associated `filestrategy.py` for data processing.
+    * Leveraged code from the [Azure Search OpenAI Demo](https://github.com/Azure-Samples/azure-search-openai-demo), specifically the `prepdocs.py` script and its associated `filestrategy.py` for data processing.
     * Data was split into manageable chunks.
     * Azure OpenAI's `text-embedding-ada-002` model was used to compute embeddings for these chunks.
     * The generated embeddings and content chunks were stored in an Azure AI Search index.
