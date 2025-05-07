@@ -48,9 +48,8 @@ This section outlines the iterative approach taken to build the chatbot.
 * **Objective:** To integrate the RAG pattern with the bot, enabling it to retrieve relevant information from the knowledge base and generate contextual responses using a powerful language model.
 * **Implementation:**
     * The RAG solution was integrated into the bot's backend. Key components involved:
-        * `app/backend/app.py` (main application logic)
-        * `app/backend/approaches/` (different RAG strategies and interaction logic)
-        * `app/backend/core/authentication.py` (handling security and access)
+        * `app.py` and `bots.py` (main application logic)
+        * `approaches/` (different RAG strategies and interaction logic)
     * Azure AI Search was used to query the previously created index.
     * Azure AI Services provided access to the `gpt-4` model for generating responses based on retrieved context and the `text-embedding-ada-002` model for processing user queries if needed.
 * **Challenge Encountered:** Faced OpenAI rate limit issues. An increase in quota is required to fully test and operate the RAG-powered bot at scale. This involves submitting a request to Azure.
@@ -65,17 +64,19 @@ This section outlines the iterative approach taken to build the chatbot.
         * `text-embedding-ada-002` (for embeddings)
 * **Search & Data Storage:** Azure AI Search (formerly Azure Cognitive Search) for storing and querying embeddings.
 * **Backend Language:** Python
-* **Key Python Scripts/Modules:**
-    * `predocs.py` & `filestrategy.py` (from Azure Search OpenAI Demo for data preparation)
-    * `app/backend/app.py`
-    * `app/backend/approaches/`
-    * `app/backend/core/authentication.py`
 
 ## Future Work & Next Steps
 
-* **Address OpenAI Rate Limits:** Submit the necessary request to Azure to increase the OpenAI service quota.
-* **Refine Conversational Flow:** Continuously improve natural language understanding, context management, and response personalization.
-* **Enhance Service Integration:** Develop robust flows for booking/registration and other services offered by ElternLeben.de.
-* **Implement Analytics:** Integrate analytics to track usage and gather insights for improvement.
-* **Thorough Testing:** Conduct comprehensive testing based on the hackathon's evaluation criteria.
+* **Customize Prompts for ElternLeben.de Data:**
+    * Modify the prompt files located in `app/backend/approaches/prompts/` (e.g., `chat_query_rewrite.prompty` and `chat_answer_question.prompty`).
+    * Tailor the system messages and few-shot examples within these prompts to specifically address the context of ElternLeben.de's services and user queries, moving away from generic examples (e.g., "Assistant helps the company employees with their healthcare plan questions..." should be changed to something like "Assistant supports parents with questions about child development, parenting challenges, and ElternLeben.de's services...").
+* **Enhance Service Integration (Booking/Registration):**
+    * **Azure Functions:** Develop Azure Functions to wrap calls to mock FastAPI endpoints (for initial development) and later to real booking/registration APIs (e.g., Zoom/SimplyBook). This will centralize error handling, authentication, and logging for these external service interactions.
+    * **Azure API Management (APIM):** Implement APIM to act as a unified gateway for both mock and real service APIs. This will enforce policies like rate limits, CORS, client-credential authentication, and provide usage analytics.
+    * **Azure Logic Apps:** Design visual workflows using Azure Logic Apps to automate post-booking/registration processes. For example, trigger workflows on successful registration to:
+        * Send confirmation emails (e.g., via SendGrid).
+        * Send SMS reminders (e.g., via Twilio).
+        * Push calendar invites (e.g., to Outlook/Google Calendar).
+    * **Azure Bot Framework Integration:** Ensure seamless transitions within the chatbot (managed by Azure Bot Framework) to initiate these booking/registration flows via Azure Functions and APIM.
+
 
